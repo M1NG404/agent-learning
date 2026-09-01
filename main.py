@@ -3,8 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
-
-from tools.order_tools import get_order
+from tools.registry import tool_registry
 
 load_dotenv()
 
@@ -30,13 +29,30 @@ tools = [
                 "required": ["order_id"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "cancel_order",
+            "description": "根据订单ID取消订单",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "order_id": {
+                        "type": "integer",
+                        "description": "订单ID"
+                    }
+                },
+                "required": ["order_id"]
+            }
+        }
     }
 ]
 
 messages = [
     {
-        "role": "user",
-        "content": "帮我查查订单1234567890的状态"
+       "role": "user",
+        "content": "帮我取消订单1234567890"
     }
 ]
 
@@ -73,12 +89,15 @@ while True:
         print("调用工具:", tool_name)
         print("参数:", arguments)
 
-        if tool_name == "get_order":
-            result = get_order(**arguments)
+        tool = tool_registry.get(tool_name)
+
+        if tool:
+            result = tool(**arguments)
         else:
             result = {
                 "error": f"未知工具: {tool_name}"
-            }
+             }
+       
 
         # 把工具结果写回 State
         messages.append(

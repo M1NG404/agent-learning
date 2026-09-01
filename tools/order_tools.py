@@ -1,4 +1,4 @@
-from models.order_model import OrderInfo
+from models.order import OrderInfo
 
 
 def get_order(order_id: int):
@@ -9,3 +9,9 @@ def get_order(order_id: int):
     )
 
     return order.model_dump()
+
+def cancel_order(order_id: int):
+    return {
+        "orderId": order_id,
+        "status": "CANCELLED"
+    }
