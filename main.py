@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import ValidationError
-from models.agent_state import AgentState
+from models.agent_state import AgentState, AgentStatus
 from tools import definitions
 from tools.registry import tool_registry
 
@@ -30,9 +30,13 @@ state=AgentState(
 while True:
 
     state.iteration_count += 1
+    print("执行轮次:", state.iteration_count)
+    print("Agent 状态:", state.status)
+    print("Agent 状态值:", state.status.value)
+    print("================================")
 
     if(state.iteration_count > MAX_ITERATIONS):
-        state.status = "MAX_ITERATIONS_REACHED"
+        state.status = AgentStatus.MAX_ITERATIONS_REACHED
         print("达到最大迭代次数，终止执行")
         break
 
@@ -52,7 +56,7 @@ while True:
 
     # 没有工具调用，说明任务完成
     if not message.tool_calls:
-        state.status = "COMPLETED"
+        state.status = AgentStatus.COMPLETED
         print("Agent 状态:", state.status)
         print("执行轮次:", state.iteration_count)
         print("最终回答：")
