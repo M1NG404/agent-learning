@@ -1,6 +1,6 @@
 
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from openai import BaseModel
 
@@ -16,3 +16,4 @@ class AgentState(BaseModel):
     messages: list[dict[str,Any]]
     iteration_count: int = 0
     status: AgentStatus = AgentStatus.RUNNING
+    final_answer: Optional[str] = None

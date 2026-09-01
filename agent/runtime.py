@@ -1,5 +1,7 @@
 import json
 
+import logging
+
 from openai import OpenAI
 from pydantic import ValidationError
 
@@ -7,6 +9,7 @@ from models.agent_state import AgentState, AgentStatus
 from tools.definitions import tools
 from tools.registry import tool_registry
 
+logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
 
 def run_agent(client: OpenAI, state: AgentState):
@@ -18,7 +21,10 @@ def run_agent(client: OpenAI, state: AgentState):
             state.status = AgentStatus.MAX_ITERATIONS_REACHED
             break
 
-        print("Agent 当前轮次:", state.iteration_count)
+        logger.info(
+            "Agent 当前轮次: %s",
+            state.iteration_count
+        )
 
         response = client.chat.completions.create(
             model="qwen-plus",
@@ -35,9 +41,8 @@ def run_agent(client: OpenAI, state: AgentState):
 
         if not message.tool_calls:
             state.status = AgentStatus.COMPLETED
+            state.final_answer = message.content
 
-            print("最终回答：")
-            print(message.content)
             break
 
         for tool_call in message.tool_calls:
@@ -49,8 +54,8 @@ def run_agent(client: OpenAI, state: AgentState):
                     tool_call.function.arguments
                 )
 
-                print("调用工具:", tool_name)
-                print("参数:", arguments)
+                logger.info("调用工具: %s", tool_name)
+                logger.info("工具参数: %s", arguments)
 
                 tool_info = tool_registry.get(tool_name)
 
