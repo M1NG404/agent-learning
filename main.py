@@ -7,12 +7,17 @@ from agent.runtime import run_agent
 from models.agent_state import AgentState
 import logging
 
+from memory.store import MemoryStore
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s - %(message)s"
 )
 
 load_dotenv()
+
+memory_store = MemoryStore()
+memory = memory_store.load()
 
 
 client = OpenAI(
@@ -23,9 +28,13 @@ client = OpenAI(
 
 state = AgentState(
     messages=[
+    {
+            "role": "system",
+            "content": f"用户长期记忆：{memory}"
+        },
         {
             "role": "user",
-            "content": "帮我取消订单1234567890"
+            "content": "我是谁"
         }
     ]
 )

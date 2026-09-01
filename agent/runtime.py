@@ -73,25 +73,26 @@ def run_agent(client: OpenAI, state: AgentState):
                     result = tool(
                         **validated_args.model_dump()
                     )
+                    logger.info("工具执行结果: %s", result)
 
             except json.JSONDecodeError as e:
                 result = {
                     "error": "工具参数 JSON 解析失败",
                     "details": str(e)
                 }
-
+                logger.error("工具参数 JSON 解析失败: %s", e)
             except ValidationError as e:
                 result = {
                     "error": "工具参数校验失败",
                     "details": e.errors()
                 }
-
+                logger.error("工具参数校验失败: %s", e)
             except Exception as e:
                 result = {
                     "error": "工具执行失败",
                     "details": str(e)
                 }
-
+                logger.error("工具执行失败: %s", e)
             state.messages.append(
                 {
                     "role": "tool",

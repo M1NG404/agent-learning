@@ -1,3 +1,6 @@
+
+# 给 LLM 看的 Tool Schema
+
 tools = [
     {
         "type": "function",
@@ -30,6 +33,26 @@ tools = [
                     }
                 },
                 "required": ["order_id"]
+            }
+        }
+    },{
+        "type":"function",
+        "function":{
+            "name":"save_memory",
+            "description":"保存用户的长期记忆",
+            "parameters":{
+                "type":"object",
+                "properties":{
+                    "key":{
+                        "type":"string",
+                        "description":"记忆字段名，如user_name, user_age等"
+                    },
+                    "value":{
+                        "type":"string",
+                        "description":"需要保存的记忆内容"
+                    }
+                },
+                "required":["key", "value"]
             }
         }
     }
