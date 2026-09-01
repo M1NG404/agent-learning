@@ -4,77 +4,57 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import ValidationError
+from models.agent_state import AgentState
+from tools import definitions
 from tools.registry import tool_registry
 
 load_dotenv()
+
+MAX_ITERATIONS = 10
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_API_BASE_URL"),
 )
 
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_order",
-            "description": "根据订单ID查询订单信息",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "order_id": {
-                        "type": "integer",
-                        "description": "订单ID"
-                    }
-                },
-                "required": ["order_id"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "cancel_order",
-            "description": "根据订单ID取消订单",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "order_id": {
-                        "type": "integer",
-                        "description": "订单ID"
-                    }
-                },
-                "required": ["order_id"]
-            }
-        }
-    }
-]
+state=AgentState(
+     messages=[
+          {
+             "role": "user",
+                "content": "帮我取消订单1234567890"
+          }
+     ]
+)
 
-messages = [
-    {
-       "role": "user",
-        "content": "帮我取消订单123"
-    }
-]
 
 while True:
 
+    state.iteration_count += 1
+
+    if(state.iteration_count > MAX_ITERATIONS):
+        state.status = "MAX_ITERATIONS_REACHED"
+        print("达到最大迭代次数，终止执行")
+        break
+
     response = client.chat.completions.create(
         model="qwen-plus",
-        messages=messages,
-        tools=tools,
+        messages=state.messages,
+        tools=definitions.tools,
         tool_choice="auto",
     )
 
     message = response.choices[0].message
 
     # 记录 LLM 本轮输出
-    messages.append(
+    state.messages.append(
         message.model_dump(exclude_none=True)
     )
 
     # 没有工具调用，说明任务完成
     if not message.tool_calls:
+        state.status = "COMPLETED"
+        print("Agent 状态:", state.status)
+        print("执行轮次:", state.iteration_count)
         print("最终回答：")
         print(message.content)
         break
@@ -122,7 +102,7 @@ while True:
       
 
         # 把工具结果写回 State
-        messages.append(
+        state.messages.append(
             {
                 "role": "tool",
                 "tool_call_id": tool_call.id,
