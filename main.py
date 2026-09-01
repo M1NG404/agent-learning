@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
+from pydantic import ValidationError
 from tools.registry import tool_registry
 
 load_dotenv()
@@ -52,7 +53,7 @@ tools = [
 messages = [
     {
        "role": "user",
-        "content": "帮我取消订单1234567890"
+        "content": "帮我取消订单123"
     }
 ]
 
@@ -82,6 +83,7 @@ while True:
     for tool_call in message.tool_calls:
 
         tool_name = tool_call.function.name
+
         arguments = json.loads(
             tool_call.function.arguments
         )
@@ -89,15 +91,28 @@ while True:
         print("调用工具:", tool_name)
         print("参数:", arguments)
 
-        tool = tool_registry.get(tool_name)
+        tool_info=tool_registry.get(tool_name)
 
-        if tool:
-            result = tool(**arguments)
-        else:
-            result = {
-                "error": f"未知工具: {tool_name}"
+        if tool_info:
+            tool=tool_info["function"]
+            args_model=tool_info["args_model"]  
+
+            try:
+                validated_args = args_model(**arguments)
+
+                result = tool(
+                    **validated_args.model_dump()
+                )
+            except ValidationError as e:
+                result = {
+                    "error": "工具参数校验失败",
+                    "details": e.errors()
              }
-       
+                
+        else:
+            result={
+                "error": f"未知工具: {tool_name}"
+            }
 
         # 把工具结果写回 State
         messages.append(
