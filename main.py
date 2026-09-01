@@ -83,36 +83,43 @@ while True:
     for tool_call in message.tool_calls:
 
         tool_name = tool_call.function.name
+        try:       
+            arguments = json.loads(
+                tool_call.function.arguments
+            )
 
-        arguments = json.loads(
-            tool_call.function.arguments
-        )
+            print("调用工具:", tool_name)
+            print("参数:", arguments)
 
-        print("调用工具:", tool_name)
-        print("参数:", arguments)
+            tool_info=tool_registry.get(tool_name)
 
-        tool_info=tool_registry.get(tool_name)
+            if tool_info:
+                tool=tool_info["function"]
+                args_model=tool_info["args_model"]  
 
-        if tool_info:
-            tool=tool_info["function"]
-            args_model=tool_info["args_model"]  
-
-            try:
+           
                 validated_args = args_model(**arguments)
 
                 result = tool(
                     **validated_args.model_dump()
                 )
-            except ValidationError as e:
+            else:
+                result={
+                    "error": f"未知工具: {tool_name}"
+                }
+
+        except ValidationError as e:
                 result = {
                     "error": "工具参数校验失败",
                     "details": e.errors()
              }
-                
-        else:
-            result={
-                "error": f"未知工具: {tool_name}"
+        except Exception as e:
+                result = {
+                "error": "工具执行失败",
+                "details": str(e)
             }
+                
+      
 
         # 把工具结果写回 State
         messages.append(
