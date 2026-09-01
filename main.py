@@ -8,6 +8,7 @@ from models.agent_state import AgentState
 import logging
 
 from memory.store import MemoryStore
+from memory.manager import MemoryManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,7 +18,13 @@ logging.basicConfig(
 load_dotenv()
 
 memory_store = MemoryStore()
-memory = memory_store.load()
+
+memory_manager=MemoryManager(
+    store=memory_store
+)
+
+memory_context = memory_manager.build_context()
+
 
 
 client = OpenAI(
@@ -30,7 +37,7 @@ state = AgentState(
     messages=[
     {
             "role": "system",
-            "content": f"用户长期记忆：{memory}"
+            "content": memory_context
         },
         {
             "role": "user",
