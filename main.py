@@ -9,7 +9,7 @@ from models.agent_state import AgentState
 
 from memory.store import MemoryStore
 from memory.manager import MemoryManager
-
+from memory.embedding import EmbeddingService
 from tools.registry import create_tool_registry
 
 
@@ -26,6 +26,15 @@ logging.basicConfig(
 # OPENAI_API_KEY
 # OPENAI_API_BASE_URL
 load_dotenv()
+
+# =========================
+# 5. 创建 LLM Client
+# =========================
+# 当前使用 OpenAI-compatible SDK 调用 Qwen
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    base_url=os.getenv("OPENAI_API_BASE_URL"),
+)
 
 
 # =========================
@@ -48,8 +57,13 @@ memory_store = MemoryStore()
 # {"user_name": "小明"}
 #        ↓
 # "用户长期记忆：{'user_name': '小明'}"
+embedding_service=EmbeddingService(
+    client=client
+)
+
 memory_manager = MemoryManager(
-    store=memory_store
+    store=memory_store,
+    embedding_service=embedding_service
 )
 
 
@@ -85,14 +99,7 @@ memory_context = memory_manager.build_context(
 )
 
 
-# =========================
-# 5. 创建 LLM Client
-# =========================
-# 当前使用 OpenAI-compatible SDK 调用 Qwen
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url=os.getenv("OPENAI_API_BASE_URL"),
-)
+
 
 
 # =========================
