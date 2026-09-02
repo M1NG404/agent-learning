@@ -7,12 +7,12 @@ from pydantic import ValidationError
 
 from models.agent_state import AgentState, AgentStatus
 from tools.definitions import tools
-from tools.registry import tool_registry
+
 
 logger = logging.getLogger(__name__)
 MAX_ITERATIONS = 10
 
-def run_agent(client: OpenAI, state: AgentState):
+def run_agent(client: OpenAI, state: AgentState, tool_registry: dict):
     while True:
 
         state.iteration_count += 1
