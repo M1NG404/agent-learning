@@ -25,24 +25,19 @@ class MemoryManager:
         query_vector = self.embedding_service.embed(query)
         scored_memories=[]
         #2.计算每条记忆的向量与用户问题向量的相似度
-        for key, value in memory.items():
-            # 把一条memory转换成自然语言文本
-            memory_text=f"{key}:{value}"
+        for key, memory_item in memory.items():
 
-            # 3.memory转向量
-            memory_vector=self.embedding_service.embed(memory_text)
+            value = memory_item["value"]
+            memory_vector = memory_item["embedding"]
 
-            # 4.计算query和这条memory的相似度
             score=cosine_similarity(
                 query_vector,
                 memory_vector
             )
 
-            # 保存：key、value、score
             scored_memories.append(
                 (key, value, score)
-            )
-
+            )   
         # 5.按相似度排序并返回top_k条记忆
         scored_memories.sort(
             key=lambda item: item[2], 

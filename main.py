@@ -83,7 +83,8 @@ memory_manager = MemoryManager(
 #     value="小明"
 # )
 tool_registry = create_tool_registry(
-    memory_store=memory_store
+    memory_store=memory_store,
+    embedding_service=embedding_service
 )
 
 
@@ -92,7 +93,7 @@ tool_registry = create_tool_registry(
 # =========================
 # 从长期 Memory 中读取数据，
 # 然后转换成可以放进 messages 的文本 Context
-user_input="我是谁，我喜欢吃什么，我喜欢什么编程语言"
+user_input="我是谁"
 
 memory_context = memory_manager.build_context(
     query=user_input
