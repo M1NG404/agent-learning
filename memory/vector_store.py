@@ -14,6 +14,12 @@ class InMemoryVectorStore:
             value:str,
             vector:list[float]
     ) -> None:
+
+        for item in self.items:
+            if item["key"] == key:
+                item["value"] = value
+                item["vector"] = vector
+                return
         self.items.append(
             {
                 "key":key,
@@ -30,7 +36,7 @@ class InMemoryVectorStore:
         # 计算每个存储项与查询向量的相似度
         scored_items = []
         for item in self.items:
-            
+
             score = cosine_similarity(
                 query_vector,
                 item["vector"]

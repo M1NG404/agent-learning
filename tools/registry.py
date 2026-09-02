@@ -9,11 +9,12 @@ from models.memory_model import SaveMemoryArgs
 
 from tools.order_tools import cancel_order, get_order
 from tools.memory_tools import save_memory
-
+from memory.vector_store import InMemoryVectorStore
 
 def create_tool_registry(
         memory_store: MemoryStore,
-        embedding_service: EmbeddingService
+        embedding_service: EmbeddingService,
+        vector_store: InMemoryVectorStore   
         ):
     return {
         "get_order": {
@@ -30,7 +31,8 @@ def create_tool_registry(
             "function": partial(
                 save_memory,
                 store=memory_store,
-                embedding_service=embedding_service
+                embedding_service=embedding_service,
+                vector_store=vector_store
             ),
             "args_model": SaveMemoryArgs
         }

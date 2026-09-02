@@ -1,59 +1,41 @@
 from memory.store import MemoryStore
 from memory.embedding import EmbeddingService
-from memory.similarity import cosine_similarity
+from memory.vector_store import InMemoryVectorStore
 
 class MemoryManager:
     def __init__(
             self,
             store: MemoryStore,
-            embedding_service:EmbeddingService
+            embedding_service:EmbeddingService,
+            vector_store: InMemoryVectorStore
         ):
         self.store = store
         self.embedding_service = embedding_service
+        self.vector_store = vector_store
 
     def retrieve(
             self,
             query:str,
             top_k:int=1
         )->dict:
-        memory = self.store.load()
 
-        if not memory:
-            return {}
-
-        #1.用户问题转成向量
+        # 1. 调用 EmbeddingService 将 query 转换为向量
         query_vector = self.embedding_service.embed(query)
-        scored_memories=[]
-        #2.计算每条记忆的向量与用户问题向量的相似度
-        for key, memory_item in memory.items():
 
-            value = memory_item["value"]
-            memory_vector = memory_item["embedding"]
-
-            score=cosine_similarity(
-                query_vector,
-                memory_vector
-            )
-
-            scored_memories.append(
-                (key, value, score)
-            )   
-        # 5.按相似度排序并返回top_k条记忆
-        scored_memories.sort(
-            key=lambda item: item[2], 
-            reverse=True
+        # 2. 调用 InMemoryVectorStore 的 search 方法进行语义检索
+        result = self.vector_store.search(
+            query_vector=query_vector,
+            top_k=top_k
         )
 
-        # 6.返回 top_k 条记忆
-        top_memories=scored_memories[:top_k]   
+        # 3. 将检索结果转换为字典形式，方便后续使用
+        results={}
 
-        # 7.转回dict
-        result={} 
+        # 4. 遍历检索结果，将每个结果的 key 和 value 存入 results 字典中
+        for item in result:
+            results[item["key"]] = item["value"]
 
-        for key, value, score in top_memories:
-            result[key]=value
-
-        return result
+        return results
 
 
 

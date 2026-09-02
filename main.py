@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from agent.runtime import run_agent
+from memory.vector_store import InMemoryVectorStore
 from models.agent_state import AgentState
 
 from memory.store import MemoryStore
@@ -27,10 +28,7 @@ logging.basicConfig(
 # OPENAI_API_BASE_URL
 load_dotenv()
 
-# =========================
-# 5. 创建 LLM Client
-# =========================
-# 当前使用 OpenAI-compatible SDK 调用 Qwen
+
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_API_BASE_URL"),
@@ -44,26 +42,25 @@ client = OpenAI(
 # 当前底层存储是 memory.json
 memory_store = MemoryStore()
 
-
-# =========================
-# 2. 创建 MemoryManager
-# =========================
-# 把同一个 memory_store 注入给 MemoryManager
-#
-# MemoryManager 负责：
-# Memory -> LLM Context
-#
-# 例如：
-# {"user_name": "小明"}
-#        ↓
-# "用户长期记忆：{'user_name': '小明'}"
 embedding_service=EmbeddingService(
     client=client
 )
 
+vector_store=InMemoryVectorStore()    
+
+memory=memory_store.load()
+
+for key, item in memory.items():
+    vector_store.add(
+        key=key,
+        value=item["value"],
+        vector=item["embedding"]
+    )
+
 memory_manager = MemoryManager(
     store=memory_store,
-    embedding_service=embedding_service
+    embedding_service=embedding_service,
+    vector_store=vector_store
 )
 
 
@@ -84,7 +81,8 @@ memory_manager = MemoryManager(
 # )
 tool_registry = create_tool_registry(
     memory_store=memory_store,
-    embedding_service=embedding_service
+    embedding_service=embedding_service,
+    vector_store=vector_store
 )
 
 
@@ -93,7 +91,7 @@ tool_registry = create_tool_registry(
 # =========================
 # 从长期 Memory 中读取数据，
 # 然后转换成可以放进 messages 的文本 Context
-user_input="我是谁"
+user_input = "记住，我最喜欢的编程语言是 Python"
 
 memory_context = memory_manager.build_context(
     query=user_input
@@ -156,9 +154,8 @@ state = AgentState(
 final_state = run_agent(
     client=client,
     state=state,
-    tool_registry=tool_registry
+    tool_registry=tool_registry,
 )
-
 
 # =========================
 # 8. 输出最终运行结果
