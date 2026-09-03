@@ -23,7 +23,10 @@ class MemoryStore:
             return json.loads(content)
 
 
-    def save(self, memory: dict[str, Any]) -> None:
+    def save(
+            self, 
+            memory: dict[str, Any]
+        ) -> None:
         with self.file_path.open(
             "w",
             encoding="utf-8"
