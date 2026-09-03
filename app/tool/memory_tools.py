@@ -1,5 +1,5 @@
-from memory.embedding import EmbeddingService
-from memory.interface.vector_store_interface import VectorStoreInterface
+from app.service.embedding_service import EmbeddingService
+from app.mapper.interface.vector_store_interface import VectorStoreInterface
 
 
 def save_memory(

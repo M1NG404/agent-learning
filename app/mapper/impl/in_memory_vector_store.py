@@ -1,5 +1,5 @@
-from memory.similarity import cosine_similarity
-from memory.interface.vector_store_interface import VectorStoreInterface
+from app.service.similarity import cosine_similarity
+from app.mapper.interface.vector_store_interface import VectorStoreInterface
 
 # 内存版向量存储/检索
 class InMemoryVectorStore(VectorStoreInterface):

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from qdrant_client import QdrantClient, models
 
-from memory.embedding import EmbeddingService
+from app.service.embedding_service import EmbeddingService
 
 
 load_dotenv()

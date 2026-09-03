@@ -1,4 +1,4 @@
-from config.container import Container
+from app.config.container import Container
 
 container = Container()
 

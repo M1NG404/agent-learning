@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from qdrant_client import QdrantClient
 
-from memory.embedding import EmbeddingService
-from memory.impl.qdrant_vector_store import QdrantVectorStore
-from memory.manager import MemoryManager
-from tools.registry import create_tool_registry
+from app.service.embedding_service import EmbeddingService
+from app.mapper.impl.qdrant_vector_store import QdrantVectorStore
+from app.service.memory_service import MemoryManager
+from app.tool.registry import create_tool_registry
 
 # 先加载环境变量
 load_dotenv()

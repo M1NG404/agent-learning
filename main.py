@@ -1,8 +1,8 @@
 import logging
 
-from agent.runtime import run_agent
-from config.container import Container
-from models.agent_state import AgentState
+from app.core.runtime import run_agent
+from app.config.container import Container
+from app.pojo.agent_state import AgentState
 
 
 logging.basicConfig(

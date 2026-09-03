@@ -1,4 +1,4 @@
-from models.order import OrderInfo
+from app.pojo.order import OrderInfo
 
 
 def get_order(order_id: int):

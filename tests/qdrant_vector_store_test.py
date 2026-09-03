@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from qdrant_client import QdrantClient
 
-from memory.embedding import EmbeddingService
-from memory.impl.qdrant_vector_store import QdrantVectorStore
+from app.service.embedding_service import EmbeddingService
+from app.mapper.impl.qdrant_vector_store import QdrantVectorStore
 
 
 load_dotenv()

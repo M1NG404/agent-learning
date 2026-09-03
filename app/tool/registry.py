@@ -2,13 +2,13 @@
 
 from functools import partial
 
-from memory.embedding import EmbeddingService
-from models.order import OrderArgs
-from models.memory_model import SaveMemoryArgs
+from app.service.embedding_service import EmbeddingService
+from app.pojo.order import OrderArgs
+from app.pojo.memory import SaveMemoryArgs
 
-from tools.order_tools import cancel_order, get_order
-from tools.memory_tools import save_memory
-from memory.interface.vector_store_interface import VectorStoreInterface
+from app.tool.order_tools import cancel_order, get_order
+from app.tool.memory_tools import save_memory
+from app.mapper.interface.vector_store_interface import VectorStoreInterface
 
 def create_tool_registry(
         embedding_service: EmbeddingService,

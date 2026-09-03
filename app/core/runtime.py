@@ -5,8 +5,8 @@ import logging
 from openai import OpenAI
 from pydantic import ValidationError
 
-from models.agent_state import AgentState, AgentStatus
-from tools.definitions import tools
+from app.pojo.agent_state import AgentState, AgentStatus
+from app.tool.definitions import tools
 
 
 logger = logging.getLogger(__name__)

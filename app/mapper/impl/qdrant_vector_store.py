@@ -1,6 +1,6 @@
 from qdrant_client import QdrantClient, models
 import uuid
-from memory.interface.vector_store_interface import VectorStoreInterface
+from app.mapper.interface.vector_store_interface import VectorStoreInterface
 
 # Qdrant版 向量存储/检索
 

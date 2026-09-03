@@ -1,4 +1,4 @@
-from memory.impl.in_memory_vector_store import InMemoryVectorStore
+from app.mapper.impl.in_memory_vector_store import InMemoryVectorStore
 
 
 vector_store = InMemoryVectorStore()

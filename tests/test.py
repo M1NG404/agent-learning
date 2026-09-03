@@ -2,8 +2,8 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from memory.similarity import cosine_similarity
-from memory.embedding import EmbeddingService
+from app.service.similarity import cosine_similarity
+from app.service.embedding_service import EmbeddingService
 
 
 load_dotenv()
