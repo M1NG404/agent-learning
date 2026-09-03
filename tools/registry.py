@@ -3,7 +3,6 @@
 from functools import partial
 
 from memory.embedding import EmbeddingService
-from memory.store import MemoryStore
 from models.order import OrderArgs
 from models.memory_model import SaveMemoryArgs
 
@@ -12,7 +11,6 @@ from tools.memory_tools import save_memory
 from memory.interface.vector_store_interface import VectorStoreInterface
 
 def create_tool_registry(
-        memory_store: MemoryStore,
         embedding_service: EmbeddingService,
         vector_store: VectorStoreInterface   
         ):
@@ -30,7 +28,6 @@ def create_tool_registry(
         "save_memory": {
             "function": partial(
                 save_memory,
-                store=memory_store,
                 embedding_service=embedding_service,
                 vector_store=vector_store
             ),

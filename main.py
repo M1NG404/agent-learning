@@ -14,23 +14,12 @@ logging.basicConfig(
 container = Container()
 
 client = container.openai_client()
-memory_store = container.memory_store()
 vector_store = container.vector_store()
 memory_manager = container.memory_manager()
 tool_registry = container.tool_registry()
 
-# 启动时同步持久化 Memory 到 Qdrant
-memory = memory_store.load()
 
-for key, item in memory.items():
-    vector_store.upsert(
-        key=key,
-        value=item["value"],
-        vector=item["embedding"],
-    )
-
-user_input = "记住，我最喜欢的编程语言是 Python"
-
+user_input = "我最喜欢什么编程语言？"
 memory_context = memory_manager.build_context(
     query=user_input
 )

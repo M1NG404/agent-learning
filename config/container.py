@@ -8,7 +8,6 @@ from qdrant_client import QdrantClient
 from memory.embedding import EmbeddingService
 from memory.impl.qdrant_vector_store import QdrantVectorStore
 from memory.manager import MemoryManager
-from memory.store import MemoryStore
 from tools.registry import create_tool_registry
 
 # 先加载环境变量
@@ -17,10 +16,6 @@ load_dotenv()
 class Container(
     containers.DeclarativeContainer
 ):
-    
-    memory_store=providers.Singleton(
-        MemoryStore
-    )
 
     openai_client = providers.Singleton(
         OpenAI,
@@ -47,14 +42,12 @@ class Container(
 
     memory_manager = providers.Singleton(
         MemoryManager,
-        store=memory_store,
         embedding_service=embedding_service,
         vector_store=vector_store,
     )
 
     tool_registry=providers.Callable(
         create_tool_registry,
-        memory_store=memory_store,
         embedding_service=embedding_service,
         vector_store=vector_store,
     )

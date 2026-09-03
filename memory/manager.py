@@ -1,15 +1,12 @@
-from memory.store import MemoryStore
 from memory.embedding import EmbeddingService
 from memory.interface.vector_store_interface import VectorStoreInterface
 
 class MemoryManager:
     def __init__(
             self,
-            store: MemoryStore,
             embedding_service:EmbeddingService,
             vector_store: VectorStoreInterface
         ):
-        self.store = store
         self.embedding_service = embedding_service
         self.vector_store = vector_store
 
