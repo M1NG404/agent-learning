@@ -1,8 +1,10 @@
 from qdrant_client import QdrantClient, models
 import uuid
+from memory.interface.vector_store_interface import VectorStoreInterface
 
+# Qdrant版 向量存储/检索
 
-class QdrantVectorStore:
+class QdrantVectorStore(VectorStoreInterface):
 
     def __init__(
         self,

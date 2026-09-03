@@ -1,13 +1,13 @@
 from memory.store import MemoryStore
 from memory.embedding import EmbeddingService
-from memory.vector_store import InMemoryVectorStore
+from memory.interface.vector_store_interface import VectorStoreInterface
 
 class MemoryManager:
     def __init__(
             self,
             store: MemoryStore,
             embedding_service:EmbeddingService,
-            vector_store: InMemoryVectorStore
+            vector_store: VectorStoreInterface
         ):
         self.store = store
         self.embedding_service = embedding_service
@@ -22,7 +22,7 @@ class MemoryManager:
         # 1. 调用 EmbeddingService 将 query 转换为向量
         query_vector = self.embedding_service.embed(query)
 
-        # 2. 调用 InMemoryVectorStore 的 search 方法进行语义检索
+        # 2. 调用 VectorStore 的 search 方法进行语义检索
         result = self.vector_store.search(
             query_vector=query_vector,
             top_k=top_k

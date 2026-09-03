@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from agent.runtime import run_agent
-from memory.vector_store import InMemoryVectorStore
 from models.agent_state import AgentState
 
 from memory.store import MemoryStore
@@ -13,6 +12,8 @@ from memory.manager import MemoryManager
 from memory.embedding import EmbeddingService
 from tools.registry import create_tool_registry
 
+from qdrant_client import QdrantClient
+from memory.impl.qdrant_vector_store import QdrantVectorStore
 
 # 配置日志
 # Runtime 中的 logger.info / logger.error 会按照这个格式输出
@@ -46,12 +47,21 @@ embedding_service=EmbeddingService(
     client=client
 )
 
-vector_store=InMemoryVectorStore()    
+qdrant_client = QdrantClient(
+    url="http://localhost:6333",
+    check_compatibility=False
+)
+
+
+vector_store=QdrantVectorStore(
+    client=qdrant_client,
+    collection_name="agent_memory"
+)    
 
 memory=memory_store.load()
 
 for key, item in memory.items():
-    vector_store.add(
+    vector_store.upsert(
         key=key,
         value=item["value"],
         vector=item["embedding"]

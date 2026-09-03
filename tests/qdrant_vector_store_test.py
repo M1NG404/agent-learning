@@ -5,7 +5,7 @@ from openai import OpenAI
 from qdrant_client import QdrantClient
 
 from memory.embedding import EmbeddingService
-from memory.qdrant_vector_store import QdrantVectorStore
+from memory.impl.qdrant_vector_store import QdrantVectorStore
 
 
 load_dotenv()

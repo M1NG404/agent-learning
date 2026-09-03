@@ -1,12 +1,12 @@
 from memory.embedding import EmbeddingService
 from memory.store import MemoryStore
-from memory.vector_store import InMemoryVectorStore
+from memory.interface.vector_store_interface import VectorStoreInterface
 
 
 def save_memory(
         store: MemoryStore,
         embedding_service: EmbeddingService,
-        vector_store: InMemoryVectorStore,
+        vector_store: VectorStoreInterface,
         key: str,
         value: str,
     ):
@@ -107,7 +107,7 @@ def save_memory(
     #
     # 因此新 Memory 保存后，
     # 当前运行中的 VectorStore 也必须同步更新。
-    vector_store.add(
+    vector_store.upsert(
         key=key,
         value=value,
         vector=memory_vector

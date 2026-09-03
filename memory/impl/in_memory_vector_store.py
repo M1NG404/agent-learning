@@ -1,14 +1,15 @@
 from memory.similarity import cosine_similarity
+from memory.interface.vector_store_interface import VectorStoreInterface
 
-
-class InMemoryVectorStore:
+# 内存版向量存储/检索
+class InMemoryVectorStore(VectorStoreInterface):
 
     # 这个类是一个简单的内存向量存储器，用于存储和检索向量化的记忆数据。
     def __init__(self):
         self.items=[]
 
     # 添加一个新的记忆项到向量存储器中。
-    def add(
+    def upsert(
             self,
             key:str,
             value:str,

@@ -9,12 +9,12 @@ from models.memory_model import SaveMemoryArgs
 
 from tools.order_tools import cancel_order, get_order
 from tools.memory_tools import save_memory
-from memory.vector_store import InMemoryVectorStore
+from memory.interface.vector_store_interface import VectorStoreInterface
 
 def create_tool_registry(
         memory_store: MemoryStore,
         embedding_service: EmbeddingService,
-        vector_store: InMemoryVectorStore   
+        vector_store: VectorStoreInterface   
         ):
     return {
         "get_order": {
