@@ -1,42 +1,161 @@
-[
-  {
-    "subject": "江阴利泰装饰材料有限公司",
-    "predicate": "董事会召开日期",
-    "value": "2016年12月25日"
-  },
-  {
-    "subject": "江阴利泰装饰材料有限公司",
-    "predicate": "授信额度债务担保金额",
-    "value": "贰仟万元"
-  },
-  {
-    "subject": "澄土国用（2008）第 3884 号",
-    "predicate": "土地使用权面积",
-    "value": "20879.3"
-  },
-  {
-    "subject": "澄土国用（2008）第 3885 号",
-    "predicate": "土地使用权面积",
-    "value": "10881"
-  },
-  {
-    "subject": "房权证澄字第 fhs0002840 号",
-    "predicate": "房产面积",
-    "value": "27645.04"
-  },
-  {
-    "subject": "江苏海达科技集团有限公司",
-    "predicate": "股东会召开日期",
-    "value": "2018年12月19日"
-  },
-  {
-    "subject": "江阴海达特种人革有限公司",
-    "predicate": "责任性质",
-    "value": "负有连带义务共同债务人"
-  },
-  {
-    "subject": "江阴海达彩涂有限公司",
-    "predicate": "股东会召开地点",
-    "value": "公司会议室"
-  }
-]
+{
+  "source_file": "3200-C.E1.2025.A-00087.004-00013-%E8%82%A1%E4%B8%9C%EF%BC%88%E8%91%A3%E4%BA%8B%EF%BC%89%E4%BC%9A%E5%86%B3%E8%AE%AE-%E9%99%84%E4%BB%B61.md",
+  "attribute_facts": [
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "COMPANY",
+      "subject": "江阴利泰装饰材料有限公司",
+      "predicate": "MEETING_DATE",
+      "value": "2016年12月25日",
+      "unit": "",
+      "line_start": 7
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "PROPERTY",
+      "subject": "澄土国用（2008）第 3884 号",
+      "predicate": "AREA",
+      "value": "20879.3",
+      "unit": "平方米",
+      "line_start": 12
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "PROPERTY",
+      "subject": "澄土国用（2008）第 3885 号",
+      "predicate": "AREA",
+      "value": "10881",
+      "unit": "平方米",
+      "line_start": 13
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "PROPERTY",
+      "subject": "房权证澄字第 fhs0002840 号",
+      "predicate": "AREA",
+      "value": "27645.04",
+      "unit": "平方米",
+      "line_start": 14
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "COMPANY",
+      "subject": "江苏海达科技集团有限公司",
+      "predicate": "MEETING_DATE",
+      "value": "2018年12月19日",
+      "unit": "",
+      "line_start": 39
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "COMPANY",
+      "subject": "江阴海达彩涂有限公司",
+      "predicate": "MEETING_DATE",
+      "value": "2018年12月19日",
+      "unit": "",
+      "line_start": 113
+    },
+    {
+      "fact_type": "ATTRIBUTE",
+      "subject_type": "COMPANY",
+      "subject": "江阴海达彩涂有限公司",
+      "predicate": "MEETING_LOCATION",
+      "value": "公司会议室",
+      "unit": "",
+      "line_start": 113
+    }
+  ],
+  "relation_facts": [
+    {
+      "fact_type": "RELATION",
+      "relation_type": "GUARANTEE",
+      "participants": {
+        "guarantor": "江阴利泰装饰材料有限公司",
+        "debtor": "江阴东华铝材科技有限公司",
+        "creditor": "中国银行股份有限公司江阴支行"
+      },
+      "collaterals": [
+        {
+          "type": "LAND_USE_RIGHT",
+          "certificate_no": "澄土国用（2008）第 3884 号",
+          "area": "20879.3",
+          "unit": "平方米"
+        },
+        {
+          "type": "LAND_USE_RIGHT",
+          "certificate_no": "澄土国用（2008）第 3885 号",
+          "area": "10881",
+          "unit": "平方米"
+        },
+        {
+          "type": "REAL_ESTATE",
+          "certificate_no": "房权证澄字第 fhs0002840 号",
+          "area": "27645.04",
+          "unit": "平方米"
+        }
+      ],
+      "attributes": {
+        "amount": "贰仟万元",
+        "guarantee_type": "抵押、（或质押）担保",
+        "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+        "end_condition": "直至前述债务全部清偿完毕"
+      },
+      "line_start": 10,
+      "line_end": 14
+    },
+    {
+      "fact_type": "RELATION",
+      "relation_type": "GUARANTEE",
+      "participants": {
+        "guarantor": "江苏海达科技集团有限公司",
+        "debtor": "江阴东华铝材科技有限公司",
+        "creditor": "中国银行股份有限公司江阴支行"
+      },
+      "collaterals": [],
+      "attributes": {
+        "amount": "壹亿元",
+        "guarantee_type": "连带保证责任担保",
+        "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+        "end_condition": "直至前述债务全部清偿完毕"
+      },
+      "line_start": 42,
+      "line_end": 42
+    },
+    {
+      "fact_type": "RELATION",
+      "relation_type": "DEBT",
+      "participants": {
+        "obligor": "江阴海达特种人革有限公司",
+        "debtor": "江阴东华铝材科技有限公司",
+        "creditor": "中国银行股份有限公司江阴支行"
+      },
+      "attributes": {
+        "amount": "壹亿元",
+        "debt_type": "授信额度债务",
+        "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+        "liability_type": "负有连带义务共同债务人",
+        "end_condition": "直至前述债务全部清偿完毕"
+      },
+      "line_start": 79,
+      "line_end": 79
+    },
+    {
+      "fact_type": "RELATION",
+      "relation_type": "DEBT",
+      "participants": {
+        "obligor": "江阴海达彩涂有限公司",
+        "debtor": "江阴东华铝材科技有限公司",
+        "creditor": "中国银行股份有限公司江阴支行"
+      },
+      "attributes": {
+        "amount": "壹亿元",
+        "debt_type": "授信额度债务",
+        "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+        "liability_type": "负有连带义务共同债务人",
+        "end_condition": "直至前述债务全部清偿完毕"
+      },
+      "line_start": 115,
+      "line_end": 115
+    }
+  ]
+}
