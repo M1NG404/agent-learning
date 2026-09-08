@@ -312,3 +312,5 @@ Whole Document 长度
 Entity Resolution
 还是 Fact Schema
 ```
+
+LangExtract 能有效解决文本级 Grounding，但无法保证实体级 Grounding；在存在重复模板和“本公司”等指代的尽调文档中，仍需要独立的 Entity Resolution 层。

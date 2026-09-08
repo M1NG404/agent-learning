@@ -19,6 +19,9 @@ INPUT_DIR = BASE_DIR / "input"
 # Prompt 文件
 PROMPT_FILE = BASE_DIR / "prompt.txt"
 
+# 实验结果输出目录
+OUTPUT_DIR = BASE_DIR / "output"
+
 
 # 初始化 LLM Client
 client = OpenAI(
@@ -93,32 +96,30 @@ def extract_facts(file_path: Path):
 
     return result
 
-
 def main():
     # 找 input 下所有 Markdown
     files = list(INPUT_DIR.glob("*.md"))
 
     print(f"发现 Markdown 文件：{len(files)}")
 
-    # 暂时只测试第一个文件
     if not files:
         print("没有找到 Markdown 文件")
         return
 
+    # 暂时仍然只测试第一个文件
     file_path = files[0]
 
     print()
     print("=" * 60)
     print(f"正在处理：{file_path.name}")
 
-    # 调用事实抽取
+    # 调用 LLM 抽取事实
     result = extract_facts(file_path)
 
     print()
     print("=" * 60)
     print("模型返回结果：")
 
-    # 美化打印 JSON
     print(
         json.dumps(
             result,
@@ -126,6 +127,29 @@ def main():
             indent=2,
         )
     )
+
+    # 确保 output 目录存在
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 保存本次实验结果
+    output_file = OUTPUT_DIR / "result.json"
+
+    output_file.write_text(
+        json.dumps(
+            {
+                "model": os.getenv("FACT_EXTRACT_MODEL", "qwen-plus"),
+                "prompt_version": "v2",
+                "file": file_path.name,
+                "facts": result.get("facts", []),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    print()
+    print(f"实验结果已保存：{output_file}")
 
 
 if __name__ == "__main__":

@@ -5,3 +5,4 @@ qdrant_storage/
 
 experiments/fact_extraction/input/*
 experiments/fact_extraction/output/*
+.venv-langextract/
