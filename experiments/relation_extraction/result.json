@@ -8,6 +8,7 @@
     {
       "case": "L0010 抵押/质押担保",
       "expected_relation_type": "GUARANTEE",
+      "expected_collateral_count": 3,
       "relation": {
         "fact_type": "RELATION",
         "relation_type": "GUARANTEE",
@@ -16,6 +17,26 @@
           "debtor": "江阴东华铝材科技有限公司",
           "creditor": "中国银行股份有限公司江阴支行（或其下属分支机构）"
         },
+        "collaterals": [
+          {
+            "type": "LAND_USE_RIGHT",
+            "certificate_no": "澄土国用（2008）第 3884 号",
+            "area": "20879.3",
+            "unit": "平方米"
+          },
+          {
+            "type": "LAND_USE_RIGHT",
+            "certificate_no": "澄土国用（2008）第 3885 号",
+            "area": "10881",
+            "unit": "平方米"
+          },
+          {
+            "type": "REAL_ESTATE",
+            "certificate_no": "房权证澄字第 fhs0002840 号",
+            "area": "27645.04",
+            "unit": "平方米"
+          }
+        ],
         "attributes": {
           "amount": "贰仟万元",
           "guarantee_type": "抵押、（或质押）担保",
@@ -28,6 +49,7 @@
     {
       "case": "L0042 连带保证",
       "expected_relation_type": "GUARANTEE",
+      "expected_collateral_count": 0,
       "relation": {
         "fact_type": "RELATION",
         "relation_type": "GUARANTEE",
@@ -36,6 +58,7 @@
           "debtor": "江阴东华铝材科技有限公司",
           "creditor": "中国银行股份有限公司江阴支行（或其下属分支机构）"
         },
+        "collaterals": [],
         "attributes": {
           "amount": "壹亿元",
           "guarantee_type": "连带保证责任担保",
@@ -48,6 +71,7 @@
     {
       "case": "L0079 共同债务",
       "expected_relation_type": "DEBT",
+      "expected_collateral_count": null,
       "relation": {
         "fact_type": "RELATION",
         "relation_type": "DEBT",
