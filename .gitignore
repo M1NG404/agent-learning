@@ -1,2 +1,7 @@
 .venv/
 qdrant_storage/
+
+.vscode/
+
+experiments/fact_extraction/input/*
+experiments/fact_extraction/output/*
