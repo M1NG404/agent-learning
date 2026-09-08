@@ -1,0 +1,95 @@
+{
+  "source_file": "3200-C.E1.2025.A-00087.004-00013-%E8%82%A1%E4%B8%9C%EF%BC%88%E8%91%A3%E4%BA%8B%EF%BC%89%E4%BC%9A%E5%86%B3%E8%AE%AE-%E9%99%84%E4%BB%B61.md",
+  "cases": [
+    {
+      "case": "L0007 董事会召开时间",
+      "found": true,
+      "expected": true,
+      "actual": true,
+      "confidence": "HIGH",
+      "reason": "Evidence 明确陈述‘江阴利泰装饰材料有限公司于2016年12月25日召开董事会’，subject（江阴利泰装饰材料有限公司）与 predicate（召开董事会时间）语义匹配，value（2016年12月25日）与日期完全一致；Local Context 进一步佐证该日期对应董事会召开行为（L0007–L0008），且决议标题‘董事会决议（抵质押担保类）’表明该会议确为董事会，非其他类型会议。无歧义或角色错配。",
+      "passed": true,
+      "fact": {
+        "subject": "江阴利泰装饰材料有限公司",
+        "predicate": "召开董事会时间",
+        "value": "2016年12月25日",
+        "unit": ""
+      },
+      "evidence": "江阴利泰装饰材料有限公司（以下简称本公司）于2016年12月25日在公司会议室（地点）召开董事会",
+      "local_context": "L0005 # 董事会决议（抵质押担保类）\nL0006 \nL0007 江阴利泰装饰材料有限公司（以下简称本公司）于2016年12月25日  \nL0008 在公司会议室（地点）召开董事会同意以下事项并形成本决议：\nL0009 "
+    },
+    {
+      "case": "L0068 错误绑定的股东会召开时间",
+      "found": true,
+      "expected": false,
+      "actual": false,
+      "confidence": "LOW",
+      "reason": "Evidence 仅提供 '本公司于2018年12月19日'，缺少谓词核心语义（如'召开股东会'），Local Context 中仅有孤立日期 '2018年12月19日' 和公司公章图像/文字，未出现任何关于股东会、会议、决议、召集等语义线索；无法确认该日期与'召开股东会时间'这一 predicate 存在语义绑定。subject 虽与 Local Context 中的公司名称一致，但缺乏事件性上下文支撑其承担'召开股东会'的施事角色。因此，Fact 的 predicate 未被 Evidence 或 Local Context 支持。",
+      "passed": true,
+      "fact": {
+        "subject": "江苏海达科技集团有限公司",
+        "predicate": "召开股东会时间",
+        "value": "2018年12月19日",
+        "unit": ""
+      },
+      "evidence": "本公司于2018年12月19日",
+      "local_context": "L0066 江苏海达科技集团有限公司（公章）\nL0067 \nL0068 2018年12月19日\nL0069 \nL0070 ![Red circular company seal of Jiangsu Haida Technology Group Co., Ltd. with a star in the center and the company name around the perimeter.](bfa6833c5be8f619218c51763f16602d_img.jpg)"
+    },
+    {
+      "case": "L0139 孤立日期",
+      "found": true,
+      "expected": false,
+      "actual": false,
+      "confidence": "LOW",
+      "reason": "Fact 中 subject 为 null，predicate 为空字符串，无法构成可验证的业务事实；Evidence 仅提供日期字符串 '2018年12月19日'，Local Context 仅显示该日期位于公司印章下方，未说明其语义（如签署日期、成立日期、会议日期等），无任何谓词支撑。根据规则3、7、9，predicate 为空时不能形成可验证事实，且无上下文赋予该日期明确业务含义。",
+      "passed": true,
+      "fact": {
+        "subject": null,
+        "predicate": "",
+        "value": "2018年12月19日",
+        "unit": ""
+      },
+      "evidence": "2018年12月19日",
+      "local_context": "L0137 江阴海达彩涂有限公司（公章）\nL0138 \nL0139 2018年12月19日\nL0140 \nL0141 ![Red circular company seal of Jiangsu Haida Technology Group Co., Ltd. with a star in the center.](0bd48c1eecb2ba5149750173c9cb1138_img.jpg)"
+    },
+    {
+      "case": "L0123 本决议召开依据",
+      "found": true,
+      "expected": true,
+      "actual": true,
+      "confidence": "HIGH",
+      "reason": "Evidence 明确表述‘本决议是按照本公司章程中股东会召集程序、表决方式、表决人数等相关规定所召开的’，与 Fact 中的 subject（本决议）、predicate（召开依据）和 value（本公司章程中股东会召集程序、表决方式、表决人数等相关规定）完全一致；Local Context（L0123）进一步复现并锚定该陈述，确认其为正式决议条款。predicate ‘召开依据’准确对应原文中‘按照……所召开的’这一规范性依据表述，subject ‘本决议’在句中承担被规制对象（即依据所适用的主体）的语义角色，符合原文逻辑。",
+      "passed": true,
+      "fact": {
+        "subject": "本决议",
+        "predicate": "召开依据",
+        "value": "本公司章程中股东会召集程序、表决方式、表决人数等相关规定",
+        "unit": ""
+      },
+      "evidence": "本决议是按照本公司章程中股东会召集程序、表决方式、表决人数等相关规定所召开的。",
+      "local_context": "L0121 本公司同时确认：\nL0122 \nL0123 1、本决议是按照本公司章程中股东会召集程序、表决方式、表决人数等相关规定所召开的。\nL0124 \nL0125 2、本决议上所有股东签字为其真实签字。"
+    },
+    {
+      "case": "L0079 错误扁平化的债务关系事实",
+      "found": true,
+      "expected": false,
+      "actual": false,
+      "confidence": "HIGH",
+      "reason": "Fact 中的 subject 是 '江阴海达特种人革有限公司'，但 Evidence 和 Local Context 中明确指出承担共同债务的是 '本公司'，而根据上下文（决议由 '本公司' 召开股东会并作出），'本公司' 指代的是决议主体，即发文/决议公司；但 Evidence 和 Local Context 均未表明 '江阴海达特种人革有限公司' 就是该 '本公司'。相反，Evidence 明确写明其担保/共同债务的对象是 '江阴东华铝材科技有限公司' 的债务，且未出现 '江阴海达特种人革有限公司' 作为承担主体的任何表述。因此，subject 与原文语义角色不匹配：原文中承担共同债务的主体是决议所涉的 '本公司'（身份未在给定文本中明示为江阴海达特种人革有限公司），不能仅因 Fact 主观指定就认定其成立。predicate '承担共同债务的授信额度' 表述亦不准确——原文是为他人（江阴东华铝材科技有限公司）的壹亿元授信额度债务'作为负有连带义务共同债务人承担债务'，即承担的是该授信项下的具体债务（含本息费用等），而非'承担授信额度本身'；授信额度是银行给予借款人的额度上限，不可被第三方'承担'，'承担授信额度'无法律和业务语义。value '壹亿元' 虽在原文出现，但它是被担保主债务人（江阴东华铝材科技有限公司）所获授信额度的金额，不是江阴海达特种人革有限公司自身被授予或承担的额度。综上，subject 身份未被支持、predicate 语义错误、value 所指对象错配。",
+      "passed": true,
+      "fact": {
+        "subject": "江阴海达特种人革有限公司",
+        "predicate": "承担共同债务的授信额度",
+        "value": "壹亿元",
+        "unit": "授信额度"
+      },
+      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+      "local_context": "L0077 在公司会议室（地点）召开股东会同意以下事项并形成决议：\nL0078 \nL0079 1、同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。\nL0080 \nL0081 2、本公司授权   /   签署相关的担保合同等法律文件及办理担保登记手续。"
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  }
+}
