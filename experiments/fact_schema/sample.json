@@ -1,0 +1,52 @@
+[
+  {
+    "fact_type": "ATTRIBUTE",
+    "subject_type": "COMPANY",
+    "subject": "江阴利泰装饰材料有限公司",
+    "predicate": "MEETING_DATE",
+    "value": "2016年12月25日",
+    "unit": "",
+    "evidence": "江阴利泰装饰材料有限公司（以下简称本公司）于2016年12月25日在公司会议室（地点）召开董事会同意以下事项并形成本决议：",
+    "line_start": 7
+  },
+  {
+    "fact_type": "ATTRIBUTE",
+    "subject_type": "PROPERTY",
+    "subject": "澄土国用（2008）第 3884 号项下土地使用权",
+    "predicate": "AREA",
+    "value": "20879.3",
+    "unit": "平方米",
+    "evidence": "A、澄土国用（2008）第 3884 号项下 20879.3 平方米土地使用权",
+    "line_start": 12
+  },
+  {
+    "fact_type": "RELATION",
+    "relation_type": "GUARANTEE",
+    "participants": {
+      "guarantor": "江苏海达科技集团有限公司",
+      "debtor": "江阴东华铝材科技有限公司",
+      "creditor": "中国银行股份有限公司江阴支行"
+    },
+    "attributes": {
+      "amount": "壹亿元",
+      "guarantee_type": "连带保证责任"
+    },
+    "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等提供连带保证责任担保，直至前述债务全部清偿完毕。",
+    "line_start": 42
+  },
+  {
+    "fact_type": "RELATION",
+    "relation_type": "DEBT",
+    "participants": {
+      "obligor": "江阴海达特种人革有限公司",
+      "debtor": "江阴东华铝材科技有限公司",
+      "creditor": "中国银行股份有限公司江阴支行"
+    },
+    "attributes": {
+      "amount": "壹亿元",
+      "liability_type": "负有连带义务共同债务人"
+    },
+    "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+    "line_start": 79
+  }
+]

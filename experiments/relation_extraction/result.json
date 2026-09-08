@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "total": 3,
+    "success": 3,
+    "failure": 0
+  },
+  "results": [
+    {
+      "case": "L0010 抵押/质押担保",
+      "expected_relation_type": "GUARANTEE",
+      "relation": {
+        "fact_type": "RELATION",
+        "relation_type": "GUARANTEE",
+        "participants": {
+          "guarantor": "江阴利泰装饰材料有限公司",
+          "debtor": "江阴东华铝材科技有限公司",
+          "creditor": "中国银行股份有限公司江阴支行（或其下属分支机构）"
+        },
+        "attributes": {
+          "amount": "贰仟万元",
+          "guarantee_type": "抵押、（或质押）担保",
+          "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+          "end_condition": "直至前述债务全部清偿完毕"
+        }
+      },
+      "validation_errors": []
+    },
+    {
+      "case": "L0042 连带保证",
+      "expected_relation_type": "GUARANTEE",
+      "relation": {
+        "fact_type": "RELATION",
+        "relation_type": "GUARANTEE",
+        "participants": {
+          "guarantor": "江苏海达科技集团有限公司",
+          "debtor": "江阴东华铝材科技有限公司",
+          "creditor": "中国银行股份有限公司江阴支行（或其下属分支机构）"
+        },
+        "attributes": {
+          "amount": "壹亿元",
+          "guarantee_type": "连带保证责任担保",
+          "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+          "end_condition": "直至前述债务全部清偿完毕"
+        }
+      },
+      "validation_errors": []
+    },
+    {
+      "case": "L0079 共同债务",
+      "expected_relation_type": "DEBT",
+      "relation": {
+        "fact_type": "RELATION",
+        "relation_type": "DEBT",
+        "participants": {
+          "obligor": "江阴海达特种人革有限公司",
+          "debtor": "江阴东华铝材科技有限公司",
+          "creditor": "中国银行股份有限公司江阴支行（或其下属分支机构）"
+        },
+        "attributes": {
+          "amount": "壹亿元",
+          "debt_type": "授信额度债务",
+          "debt_scope": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+          "liability_type": "负有连带义务共同债务人",
+          "end_condition": "直至前述债务全部清偿完毕"
+        }
+      },
+      "validation_errors": []
+    }
+  ]
+}
