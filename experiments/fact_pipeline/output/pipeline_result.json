@@ -119,136 +119,122 @@
       "123": "江阴海达彩涂有限公司"
     }
   },
+  "entity_blocks": [
+    {
+      "start_line": 7,
+      "end_line": 38,
+      "entity": "江阴利泰装饰材料有限公司"
+    },
+    {
+      "start_line": 39,
+      "end_line": 75,
+      "entity": "江苏海达科技集团有限公司"
+    },
+    {
+      "start_line": 76,
+      "end_line": 112,
+      "entity": "江阴海达特种人革有限公司"
+    },
+    {
+      "start_line": 113,
+      "end_line": 143,
+      "entity": "江阴海达彩涂有限公司"
+    }
+  ],
   "facts": [
     {
       "subject_name": "江阴利泰装饰材料有限公司",
       "original_subject_name": "江阴利泰装饰材料有限公司",
-      "predicate": "董事会召开日期",
+      "predicate": "召开董事会时间",
       "value": "2016年12月25日",
       "unit": "",
       "line_start": 7,
       "line_end": 7,
       "char_start": 23,
-      "char_end": 56,
-      "evidence": "江阴利泰装饰材料有限公司（以下简称本公司）于2016年12月25日",
+      "char_end": 55,
+      "evidence": "江阴利泰装饰材料有限公司（以下简称本公司）于2016年12月25日在公司会议室（地点）召开董事会同意以下事项并形成本决议：",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
       "subject_name": "江阴利泰装饰材料有限公司",
-      "original_subject_name": "本公司",
+      "original_subject_name": "江阴利泰装饰材料有限公司",
       "predicate": "授信额度债务担保金额",
-      "value": "贰仟万",
-      "unit": "元",
+      "value": "贰仟万元",
+      "unit": "",
       "line_start": 10,
       "line_end": 10,
       "char_start": 91,
-      "char_end": 202,
-      "evidence": "同意本公司以本公司所有的以下资产为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）贰仟万 元授信额度债务及其相应的利息、罚息、违约金、应付费用等提供抵押、（或质押）担保，直至前述债务全部清偿完毕。",
+      "char_end": 145,
+      "evidence": "同意本公司以本公司所有的以下资产为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）贰仟万元授信额度债务及其相应的利息、罚息、违约金、应付费用等提供抵押、（或质押）担保，直至前述债务全部清偿完毕。",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "BLOCK_OWNERSHIP"
     },
     {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
+      "subject_name": "澄土国用（2008）第 3884 号",
+      "original_subject_name": "澄土国用（2008）第 3884 号",
       "predicate": "土地使用权面积",
       "value": "20879.3",
       "unit": "平方米",
       "line_start": 12,
       "line_end": 12,
-      "char_start": 204,
+      "char_start": 206,
       "char_end": 245,
-      "evidence": "- A、澄土国用（2008）第 3884 号项下 20879.3 平方米土地使用权",
+      "evidence": "A、澄土国用（2008）第 3884 号项下 20879.3 平方米土地使用权",
       "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
-      "predicate": "土地使用权证号",
-      "value": "澄土国用（2008）第 3884 号",
-      "unit": "",
-      "line_start": 12,
-      "line_end": 12,
-      "char_start": 204,
-      "char_end": 245,
-      "evidence": "- A、澄土国用（2008）第 3884 号项下 20879.3 平方米土地使用权",
-      "grounded": true,
-      "subject_resolved": false
-    },
-    {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
+      "subject_name": "澄土国用（2008）第 3885 号",
+      "original_subject_name": "澄土国用（2008）第 3885 号",
       "predicate": "土地使用权面积",
       "value": "10881",
       "unit": "平方米",
       "line_start": 13,
       "line_end": 13,
-      "char_start": 246,
+      "char_start": 248,
       "char_end": 285,
-      "evidence": "- B、澄土国用（2008）第 3885 号项下 10881 平方米土地使用权",
+      "evidence": "B、澄土国用（2008）第 3885 号项下 10881 平方米土地使用权",
       "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
-      "predicate": "土地使用权证号",
-      "value": "澄土国用（2008）第 3885 号",
-      "unit": "",
-      "line_start": 13,
-      "line_end": 13,
-      "char_start": 246,
-      "char_end": 285,
-      "evidence": "- B、澄土国用（2008）第 3885 号项下 10881 平方米土地使用权",
-      "grounded": true,
-      "subject_resolved": false
-    },
-    {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
+      "subject_name": "房权证澄字第 fhs0002840 号",
+      "original_subject_name": "房权证澄字第 fhs0002840 号",
       "predicate": "房产面积",
       "value": "27645.04",
       "unit": "平方米",
       "line_start": 14,
       "line_end": 14,
-      "char_start": 286,
+      "char_start": 288,
       "char_end": 326,
-      "evidence": "- C、房权证澄字第 fhs0002840 号项下 27645.04 平方米房产",
+      "evidence": "C、房权证澄字第 fhs0002840 号项下 27645.04 平方米房产",
       "grounded": true,
-      "subject_resolved": false
-    },
-    {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
-      "predicate": "房产证号",
-      "value": "房权证澄字第 fhs0002840 号",
-      "unit": "",
-      "line_start": 14,
-      "line_end": 14,
-      "char_start": 286,
-      "char_end": 326,
-      "evidence": "- C、房权证澄字第 fhs0002840 号项下 27645.04 平方米房产",
-      "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
       "subject_name": "江苏海达科技集团有限公司",
       "original_subject_name": "江苏海达科技集团有限公司",
-      "predicate": "股东会召开日期",
+      "predicate": "召开股东会时间",
       "value": "2018年12月19日",
       "unit": "",
       "line_start": 39,
       "line_end": 39,
       "char_start": 734,
-      "char_end": 767,
-      "evidence": "江苏海达科技集团有限公司（以下简称本公司）于2018年12月19日",
+      "char_end": 766,
+      "evidence": "江苏海达科技集团有限公司（以下简称本公司）于2018年12月19日在公司会议室（地点）召开股东会同意以下事项并形成本决议：",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
       "subject_name": "江苏海达科技集团有限公司",
-      "original_subject_name": "本公司",
+      "original_subject_name": "江苏海达科技集团有限公司",
       "predicate": "授信额度债务担保金额",
       "value": "壹亿元",
       "unit": "",
@@ -258,7 +244,8 @@
       "char_end": 898,
       "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等提供连带保证责任担保，直至前述债务全部清偿完毕。",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "BLOCK_OWNERSHIP"
     },
     {
       "subject_name": "江苏海达科技集团有限公司",
@@ -272,7 +259,8 @@
       "char_end": 1501,
       "evidence": "江苏海达科技集团有限公司（公章）",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
       "subject_name": "江阴海达特种人革有限公司",
@@ -286,11 +274,12 @@
       "char_end": 1879,
       "evidence": "江阴海达特种人革有限公司（以下简称本公司）",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
+      "subject_name": "江苏海达科技集团有限公司",
+      "original_subject_name": "江阴海达特种人革有限公司",
       "predicate": "股东会召开日期",
       "value": "2018年12月19日",
       "unit": "",
@@ -300,54 +289,13 @@
       "char_end": 1514,
       "evidence": "2018年12月19日",
       "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "BLOCK_OWNERSHIP"
     },
     {
       "subject_name": "江阴海达彩涂有限公司",
       "original_subject_name": "江阴海达彩涂有限公司",
-      "predicate": "简称",
-      "value": "本公司",
-      "unit": "",
-      "line_start": 113,
-      "line_end": 113,
-      "char_start": 2746,
-      "char_end": 2765,
-      "evidence": "江阴海达彩涂有限公司（以下简称本公司）",
-      "grounded": true,
-      "subject_resolved": true
-    },
-    {
-      "subject_name": "江阴海达特种人革有限公司",
-      "original_subject_name": "本公司",
-      "predicate": "授信额度债务",
-      "value": "壹亿元",
-      "unit": "",
-      "line_start": 79,
-      "line_end": 79,
-      "char_start": 1925,
-      "char_end": 2028,
-      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
-      "grounded": true,
-      "subject_resolved": true
-    },
-    {
-      "subject_name": "江阴海达特种人革有限公司",
-      "original_subject_name": "本公司",
-      "predicate": "承担债务方式",
-      "value": "负有连带义务共同债务人",
-      "unit": "",
-      "line_start": 79,
-      "line_end": 79,
-      "char_start": 1925,
-      "char_end": 2028,
-      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
-      "grounded": true,
-      "subject_resolved": true
-    },
-    {
-      "subject_name": "江阴海达彩涂有限公司",
-      "original_subject_name": "江阴海达彩涂有限公司",
-      "predicate": "股东会召开日期",
+      "predicate": "召开股东会时间",
       "value": "2018年12月19日",
       "unit": "",
       "line_start": 113,
@@ -356,12 +304,13 @@
       "char_end": 2804,
       "evidence": "江阴海达彩涂有限公司（以下简称本公司）于2018年12月19日在公司会议室（地点）召开股东会同意以下事项并形成决议：",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
     },
     {
       "subject_name": "江阴海达彩涂有限公司",
       "original_subject_name": "江阴海达彩涂有限公司",
-      "predicate": "股东会召开地点",
+      "predicate": "召开股东会地点",
       "value": "公司会议室",
       "unit": "",
       "line_start": 113,
@@ -370,7 +319,68 @@
       "char_end": 2804,
       "evidence": "江阴海达彩涂有限公司（以下简称本公司）于2018年12月19日在公司会议室（地点）召开股东会同意以下事项并形成决议：",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
+    },
+    {
+      "subject_name": "江阴海达彩涂有限公司",
+      "original_subject_name": "本公司",
+      "predicate": "授信额度债务",
+      "value": "壹亿元",
+      "unit": "",
+      "line_start": 115,
+      "line_end": 115,
+      "char_start": 2808,
+      "char_end": 2911,
+      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+      "grounded": true,
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
+    },
+    {
+      "subject_name": "江阴海达特种人革有限公司",
+      "original_subject_name": "本公司",
+      "predicate": "债务类型",
+      "value": "授信额度债务及其相应的利息、罚息、违约金、应付费用等",
+      "unit": "",
+      "line_start": 79,
+      "line_end": 79,
+      "char_start": 1925,
+      "char_end": 2028,
+      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+      "grounded": true,
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
+    },
+    {
+      "subject_name": "江阴海达特种人革有限公司",
+      "original_subject_name": "本公司",
+      "predicate": "责任性质",
+      "value": "负有连带义务共同债务人",
+      "unit": "",
+      "line_start": 79,
+      "line_end": 79,
+      "char_start": 1925,
+      "char_end": 2028,
+      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+      "grounded": true,
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
+    },
+    {
+      "subject_name": "江阴海达特种人革有限公司",
+      "original_subject_name": "本公司",
+      "predicate": "债务履行截止条件",
+      "value": "直至前述债务全部清偿完毕",
+      "unit": "",
+      "line_start": 79,
+      "line_end": 79,
+      "char_start": 1925,
+      "char_end": 2028,
+      "evidence": "同意本公司为江阴东华铝材科技有限公司对中国银行股份有限公司江阴支行（或其下属分支机构）壹亿元授信额度债务及其相应的利息、罚息、违约金、应付费用等作为负有连带义务共同债务人承担债务，直至前述债务全部清偿完毕。",
+      "grounded": true,
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
     },
     {
       "subject_name": "江阴海达彩涂有限公司",
@@ -384,7 +394,8 @@
       "char_end": 2950,
       "evidence": "本公司授权      签署相关的担保合同等法律文件及办理担保登记手续。",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
     },
     {
       "subject_name": "江阴海达彩涂有限公司",
@@ -398,10 +409,11 @@
       "char_end": 3017,
       "evidence": "本决议是按照本公司章程中股东会召集程序、表决方式、表决人数等相关规定所召开的。",
       "grounded": true,
-      "subject_resolved": true
+      "subject_resolved": true,
+      "resolution_method": "ENTITY_RESOLUTION"
     },
     {
-      "subject_name": "UNKNOWN",
+      "subject_name": "江阴海达彩涂有限公司",
       "original_subject_name": "本公司",
       "predicate": "股东签字真实性",
       "value": "本决议上所有股东签字为其真实签字",
@@ -412,12 +424,28 @@
       "char_end": 3038,
       "evidence": "本决议上所有股东签字为其真实签字。",
       "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "BLOCK_OWNERSHIP"
     },
     {
-      "subject_name": "UNKNOWN",
-      "original_subject_name": "本公司",
-      "predicate": "决议日期",
+      "subject_name": "江阴海达彩涂有限公司",
+      "original_subject_name": "江阴海达彩涂有限公司",
+      "predicate": "公章",
+      "value": "公章",
+      "unit": "",
+      "line_start": 137,
+      "line_end": 137,
+      "char_start": 3317,
+      "char_end": 3331,
+      "evidence": "江阴海达彩涂有限公司（公章）",
+      "grounded": true,
+      "subject_resolved": true,
+      "resolution_method": "DIRECT"
+    },
+    {
+      "subject_name": "江阴海达彩涂有限公司",
+      "original_subject_name": "本决议",
+      "predicate": "日期",
       "value": "2018年12月19日",
       "unit": "",
       "line_start": 139,
@@ -426,15 +454,17 @@
       "char_end": 3344,
       "evidence": "2018年12月19日",
       "grounded": true,
-      "subject_resolved": false
+      "subject_resolved": true,
+      "resolution_method": "BLOCK_OWNERSHIP"
     }
   ],
   "summary": {
-    "total_facts": 22,
-    "grounded": 22,
-    "ungrounded": 0,
-    "resolved_subjects": 13,
-    "unresolved_subjects": 9,
-    "replaced_company_mentions": 6
+    "total_facts": 21,
+    "grounded": 21,
+    "resolved_subjects": 21,
+    "unresolved_subjects": 0,
+    "direct": 10,
+    "entity_resolution": 6,
+    "block_ownership": 5
   }
 }
