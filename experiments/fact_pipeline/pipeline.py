@@ -1,11 +1,11 @@
 import json
 import os
-from dataclasses import dataclass
+from collections import Counter
 from pathlib import Path
-
+import re
 import langextract as lx
-from dotenv import load_dotenv
 from langextract.factory import ModelConfig
+from dotenv import load_dotenv
 from openai import OpenAI
 
 
@@ -15,24 +15,21 @@ from openai import OpenAI
 
 load_dotenv()
 
-
-# 当前目录：
-# experiments/fact_pipeline/
 BASE_DIR = Path(__file__).parent
+EXPERIMENTS_DIR = BASE_DIR.parent
 
-# 原始 Markdown
-FACT_EXTRACTION_DIR = BASE_DIR.parent / "fact_extraction"
-INPUT_DIR = FACT_EXTRACTION_DIR / "input"
+INPUT_DIR = (
+    EXPERIMENTS_DIR
+    / "fact_extraction"
+    / "input"
+)
 
-# Entity Resolution Prompt
-ENTITY_RESOLUTION_DIR = BASE_DIR.parent / "entity_resolution"
-ENTITY_PROMPT_FILE = ENTITY_RESOLUTION_DIR / "prompt.txt"
-
-# Pipeline 输出
-OUTPUT_DIR = BASE_DIR / "output"
+OUTPUT_DIR = (
+    BASE_DIR
+    / "output"
+)
 
 
-# Entity Resolution 使用的 LLM Client
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_API_BASE_URL"),
@@ -40,58 +37,69 @@ client = OpenAI(
 
 
 # ============================================================
-# 数据结构
+# 1. 找当前实验 Markdown
 # ============================================================
 
-@dataclass
-class EntityBlock:
+def find_markdown_file() -> Path:
     """
-    表示文档中属于某个主体的一段连续区间。
+    当前实验目录暂时只处理第一份 Markdown。
+    """
+
+    files = list(
+        INPUT_DIR.glob("*.md")
+    )
+
+    if not files:
+        raise FileNotFoundError(
+            f"没有找到 Markdown：{INPUT_DIR}"
+        )
+
+    return files[0]
+
+
+# ============================================================
+# 2. 行号工具
+# ============================================================
+
+def add_line_numbers(
+    text: str,
+) -> str:
+    """
+    Entity Resolution 使用带行号文本。
 
     例如：
 
-    L0007 ~ L0038
-        ->
-    江阴利泰装饰材料有限公司
-    """
-
-    start_line: int
-    end_line: int
-    entity: str
-
-
-# ============================================================
-# 1. 行号工具
-# ============================================================
-
-def add_line_numbers(text: str) -> str:
-    """
-    给 Markdown 添加行号。
-
     原文：
 
-        第一行
-        第二行
+    江阴利泰...
+    本公司...
 
-    转换：
+    转为：
 
-        [L0001] 第一行
-        [L0002] 第二行
+    L0001 江阴利泰...
+    L0002 本公司...
 
-    带行号文本只给 Entity Resolution 使用。
-    LangExtract 始终处理原始 raw_text。
+    注意：
+
+    LangExtract Grounding 仍然使用原始文本，
+    不能使用加行号后的文本。
     """
 
     lines = text.splitlines()
 
-    result = []
+    numbered_lines = []
 
-    for index, line in enumerate(lines, start=1):
-        result.append(
-            f"[L{index:04d}] {line}"
+    for index, line in enumerate(
+        lines,
+        start=1,
+    ):
+        numbered_lines.append(
+            f"L{index:04d} {line}"
         )
 
-    return "\n".join(result)
+    return "\n".join(
+        numbered_lines
+    )
 
 
 def char_position_to_line(
@@ -99,64 +107,129 @@ def char_position_to_line(
     char_pos: int,
 ) -> int:
     """
-    把 LangExtract 的字符位置转换成 Markdown 行号。
+    LangExtract 给的是 char position。
 
-    原理：
+    例如：
 
-    char_pos 前面有多少个换行符
-                +
-                1
-                =
-              行号
+    char_start = 1234
+
+    转换成：
+
+    L0079
     """
 
-    return text[:char_pos].count("\n") + 1
+    return (
+        text[:char_pos]
+        .count("\n")
+        + 1
+    )
 
 
 # ============================================================
-# 2. Entity Resolution
+# 3. Entity Resolution Prompt
+# ============================================================
+
+ENTITY_RESOLUTION_PROMPT = """
+你负责做尽调文档中的主体指代消解。
+
+你的任务不是抽取业务事实。
+
+你的唯一任务是识别：
+
+“本公司”
+
+等主体指代具体对应哪个明确实体。
+
+输入文本带有行号，例如：
+
+L0001 ...
+L0002 ...
+
+输出格式：
+
+{
+  "mentions": [
+    {
+      "mention": "本公司",
+      "mention_line": 10,
+      "resolved_entity": "江阴某某有限公司",
+      "definition_line": 7
+    }
+  ]
+}
+
+字段说明：
+
+mention：
+原文中的指代表达。
+
+mention_line：
+该指代表达所在行。
+
+resolved_entity：
+该指代对应的完整实体名称。
+
+definition_line：
+该实体在当前文档业务块开始位置或明确主体定义位置。
+
+规则：
+
+1. 只能依据文档明确内容解析。
+2. 不允许猜测。
+3. 如果无法安全判断，不要输出该 mention。
+4. resolved_entity 必须使用完整实体名称。
+5. definition_line 必须对应当前主体区域的起始定义位置。
+6. mention_line 必须对应该次“本公司”出现的位置。
+7. 同一个实体可以存在多个 mention。
+8. 只输出 JSON。
+"""
+
+
+# ============================================================
+# 4. Entity Resolution
 # ============================================================
 
 def resolve_entities(
-    raw_text: str,
+    numbered_text: str,
 ) -> dict:
     """
-    专门解决：
+    返回：
 
-        本公司
-          ↓
-        到底是谁？
+    {
+        "mentions": [...],
+        "definitions": [...]
+    }
 
-    不负责 Fact Extraction。
+    definitions 从 mentions 的 definition_line
+    自动整理得到。
     """
 
-    numbered_text = add_line_numbers(
-        raw_text
-    )
-
-    prompt = ENTITY_PROMPT_FILE.read_text(
-        encoding="utf-8"
-    )
-
-    response = client.chat.completions.create(
-        model=os.getenv(
-            "FACT_EXTRACT_MODEL",
-            "qwen-plus",
-        ),
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": prompt,
+    response = (
+        client
+        .chat
+        .completions
+        .create(
+            model=os.getenv(
+                "FACT_EXTRACT_MODEL",
+                "qwen-plus",
+            ),
+            temperature=0,
+            response_format={
+                "type": "json_object"
             },
-            {
-                "role": "user",
-                "content": numbered_text,
-            },
-        ],
-        response_format={
-            "type": "json_object"
-        },
+            messages=[
+                {
+                    "role": "system",
+                    "content":
+                        ENTITY_RESOLUTION_PROMPT,
+                },
+                {
+                    "role": "user",
+                    "content":
+                        numbered_text,
+                },
+            ],
+        )
     )
 
     content = (
@@ -166,515 +239,546 @@ def resolve_entities(
         .content
     )
 
-    return json.loads(content)
+    data = json.loads(
+        content
+    )
 
-
-def build_entity_map(
-    result: dict,
-) -> dict:
-    """
-    把：
-
-        {
-            "mention_line": 42,
-            "resolved_entity": "江苏海达科技集团有限公司"
-        }
-
-    转换成：
-
-        {
-            42: "江苏海达科技集团有限公司"
-        }
-
-    用于精确解析：
-
-        当前行的“本公司”是谁？
-    """
-
-    entity_map = {}
-
-    mentions = result.get(
+    mentions = data.get(
         "mentions",
         [],
     )
 
+    # ========================================================
+    # 从 mention 自动整理主体定义
+    # ========================================================
+
+    definitions_map = {}
+
     for mention in mentions:
 
-        mention_line = mention.get(
-            "mention_line"
-        )
-
-        resolved_entity = mention.get(
+        entity = mention.get(
             "resolved_entity"
         )
 
-        if (
-            mention_line is not None
-            and resolved_entity
-            and resolved_entity != "UNKNOWN"
-        ):
-            entity_map[
-                mention_line
-            ] = resolved_entity
+        definition_line = (
+            mention.get(
+                "definition_line"
+            )
+        )
 
-    return entity_map
+        if (
+            not entity
+            or definition_line is None
+        ):
+            continue
+
+        if (
+            entity
+            not in definitions_map
+        ):
+            definitions_map[
+                entity
+            ] = definition_line
+
+        else:
+            definitions_map[
+                entity
+            ] = min(
+                definitions_map[
+                    entity
+                ],
+                definition_line,
+            )
+
+    definitions = [
+        {
+            "entity":
+                entity,
+
+            "definition_line":
+                definition_line,
+        }
+        for (
+            entity,
+            definition_line
+        )
+        in definitions_map.items()
+    ]
+
+    definitions.sort(
+        key=lambda item:
+            item["definition_line"]
+    )
+
+    return {
+        "mentions":
+            mentions,
+
+        "definitions":
+            definitions,
+    }
 
 
 # ============================================================
-# 3. Block Ownership
+# 5. Block Ownership
 # ============================================================
 
 def build_entity_blocks(
-    entity_result: dict,
+    definitions: list[dict],
     total_lines: int,
-) -> list[EntityBlock]:
+) -> list[dict]:
     """
-    根据 definition_line 自动构建主体区间。
+    根据主体 definition line 建立业务块。
 
-    例如：
+    当前文档例如：
 
-        L0007 -> 江阴利泰
-        L0039 -> 江苏海达
-        L0076 -> 海达特种人革
-        L0113 -> 海达彩涂
+    L0007 ~ L0038
+        → 江阴利泰装饰材料有限公司
 
-    自动生成：
+    L0039 ~ L0075
+        → 江苏海达科技集团有限公司
 
-        L0007 ~ L0038 -> 江阴利泰
-        L0039 ~ L0075 -> 江苏海达
-        L0076 ~ L0112 -> 海达特种人革
-        L0113 ~ 文档末尾 -> 海达彩涂
+    L0076 ~ L0112
+        → 江阴海达特种人革有限公司
+
+    L0113 ~ L0143
+        → 江阴海达彩涂有限公司
+
+    注意：
+
+    Block Ownership 不是最终事实。
+
+    它只是 LOW confidence fallback。
     """
 
-    definitions = {}
-
-    mentions = entity_result.get(
-        "mentions",
-        [],
-    )
-
-    for mention in mentions:
-
-        definition_line = mention.get(
-            "definition_line"
-        )
-
-        resolved_entity = mention.get(
-            "resolved_entity"
-        )
-
-        if (
-            definition_line is not None
-            and resolved_entity
-            and resolved_entity != "UNKNOWN"
-        ):
-            # 同一个 definition_line 可能重复出现
-            # 用 dict 自动去重
-            definitions[
-                definition_line
-            ] = resolved_entity
+    if not definitions:
+        return []
 
     sorted_definitions = sorted(
-        definitions.items()
+        definitions,
+        key=lambda item:
+            item["definition_line"],
     )
 
     blocks = []
 
-    for index, (
-        start_line,
-        entity,
-    ) in enumerate(
+    for index, definition in enumerate(
         sorted_definitions
     ):
 
+        start_line = definition[
+            "definition_line"
+        ]
+
+        owner = definition[
+            "entity"
+        ]
+
         if (
             index + 1
-            < len(sorted_definitions)
+            < len(
+                sorted_definitions
+            )
         ):
-            next_start_line = (
+
+            next_definition = (
                 sorted_definitions[
                     index + 1
-                ][0]
+                ]
             )
 
             end_line = (
-                next_start_line - 1
+                next_definition[
+                    "definition_line"
+                ]
+                - 1
             )
 
         else:
-            end_line = total_lines
+            end_line = (
+                total_lines
+            )
 
         blocks.append(
-            EntityBlock(
-                start_line=start_line,
-                end_line=end_line,
-                entity=entity,
-            )
+            {
+                "start_line":
+                    start_line,
+
+                "end_line":
+                    end_line,
+
+                "owner":
+                    owner,
+            }
         )
 
     return blocks
 
 
 def find_block_owner(
-    line: int,
-    blocks: list[EntityBlock],
-) -> str:
+    line_number: int,
+    blocks: list[dict],
+) -> str | None:
     """
-    根据行号查询所在主体块。
+    根据行号找到所在 block。
+
+    必须只有一个匹配 block，
+    否则返回 None。
     """
+
+    matches = []
 
     for block in blocks:
 
         if (
-            block.start_line
-            <= line
-            <= block.end_line
+            block[
+                "start_line"
+            ]
+            <= line_number
+            <= block[
+                "end_line"
+            ]
         ):
-            return block.entity
+            matches.append(
+                block[
+                    "owner"
+                ]
+            )
 
-    return "UNKNOWN"
+    unique_matches = list(
+        dict.fromkeys(
+            matches
+        )
+    )
+
+    if (
+        len(
+            unique_matches
+        )
+        != 1
+    ):
+        return None
+
+    return unique_matches[0]
 
 
 # ============================================================
-# 4. LangExtract
+# 6. 根据行号解析“本公司”
 # ============================================================
 
-def extract_facts(
-    raw_text: str,
-):
+def resolve_reference_by_line(
+    line_number: int,
+    mentions: list[dict],
+) -> str | None:
     """
-    LangExtract 负责：
+    Evidence 出现“本公司”时使用。
 
-    1. 找事实
-    2. predicate
-    3. value
-    4. Grounding
+    优先：
 
-    不要求它解决：
+    当前 Fact 行
+    是否存在 Entity Resolution exact match。
 
-        本公司到底是谁
+    如果没有 exact match：
+
+    暂时寻找最近的不晚于当前行的 mention。
+
+    但如果最近位置对应多个实体，
+    返回 None。
     """
 
-    prompt = """
-你是一个不良资产尽调资料事实抽取器。
+    # ========================================================
+    # Exact Line
+    # ========================================================
 
-你的任务是从输入文档中提取明确存在于原文中的业务事实。
+    exact_entities = []
 
-一个事实表示：
+    for mention in mentions:
 
-某个主体
-+
-某个属性
-+
-某个值
+        mention_line = (
+            mention.get(
+                "mention_line"
+            )
+        )
 
-必须严格遵守以下规则：
+        entity = (
+            mention.get(
+                "resolved_entity"
+            )
+        )
 
-1. 只能提取原文明确表达的事实。
+        if (
+            mention_line
+            == line_number
+            and entity
+        ):
+            exact_entities.append(
+                entity
+            )
 
-2. extraction_text 必须逐字复制原文中的连续文本。
+    exact_entities = list(
+        dict.fromkeys(
+            exact_entities
+        )
+    )
 
-3. 禁止改写、总结或拼接不同位置的文本。
+    if (
+        len(
+            exact_entities
+        )
+        == 1
+    ):
+        return exact_entities[0]
 
-4. value 必须保持原文表达形式。
+    if (
+        len(
+            exact_entities
+        )
+        > 1
+    ):
+        return None
 
-禁止自行计算、换算或者标准化。
+    # ========================================================
+    # 最近的前序 mention
+    # ========================================================
 
-例如：
+    candidates = []
 
-原文：
-壹亿元
+    for mention in mentions:
 
-正确：
+        mention_line = (
+            mention.get(
+                "mention_line"
+            )
+        )
 
-value = 壹亿元
+        entity = (
+            mention.get(
+                "resolved_entity"
+            )
+        )
 
-错误：
+        if (
+            mention_line is not None
+            and entity
+            and mention_line
+            <= line_number
+        ):
+            candidates.append(
+                mention
+            )
 
-value = 100000000
+    if not candidates:
+        return None
 
-5. 数字也必须以字符串形式输出。
+    candidates.sort(
+        key=lambda item:
+            item["mention_line"],
+        reverse=True,
+    )
 
-6. 不需要负责解析“本公司”具体是哪家公司。
+    nearest_line = (
+        candidates[0][
+            "mention_line"
+        ]
+    )
 
-如果事实主体在当前原文中表达为：
+    nearest_entities = {
+        item[
+            "resolved_entity"
+        ]
+        for item in candidates
+        if (
+            item[
+                "mention_line"
+            ]
+            == nearest_line
+        )
+    }
 
-本公司
+    if (
+        len(
+            nearest_entities
+        )
+        != 1
+    ):
+        return None
 
-则：
+    return next(
+        iter(
+            nearest_entities
+        )
+    )
 
-subject_name = 本公司
 
-7. 不要根据长距离上下文擅自把“本公司”
-转换成某个公司名称。
+# ============================================================
+# 7. LangExtract Prompt
+# ============================================================
 
-Entity Resolution 会在后续步骤专门处理。
+FACT_EXTRACTION_PROMPT = """
+从尽调文档中提取明确存在的事实。
 
-8. 如果当前 extraction_text 中直接包含完整实体名称，
-subject_name 可以直接使用该完整实体名称。
+每条 extraction 表示一个 Raw Fact。
 
-9. 一个文本片段包含多个独立事实时，
-可以拆分成多条 Extraction。
+attributes 必须包含：
 
-10. 不要进行冲突判断。
-
-11. 不要为了完整性猜测原文没有表达的信息。
-
-12. attributes 必须包含：
-
-subject_name
+subject
 predicate
 value
 unit
+
+规则：
+
+1. extraction_text 必须是原文中连续、逐字存在的文本。
+
+2. 不允许改写 extraction_text。
+
+3. 不允许生成原文不存在的 evidence。
+
+4. subject 表示该事实的候选主体。
+
+5. 如果原文使用“本公司”，可以输出：
+
+subject = "本公司"
+
+6. 如果原文没有明确写主体，不允许为了完整而虚构主体。
+
+7. predicate 使用尽可能简洁、明确的中文业务字段名称。
+
+8. value 必须保留原文表达。
+
+例如：
+
+贰仟万元
+
+不能自行转换成：
+
+2000万元
+
+9. unit 如果原文有明确单位则提取，否则为空字符串。
+
+10. 一个 Raw Fact 只表达一个核心事实。
+
+11. 不允许根据常识推断原文没有表达的信息。
+
+12. 原文只有孤立日期、孤立数字时，不要自动赋予其不存在的业务语义。
 """
+
+
+# ============================================================
+# 8. LangExtract Raw Fact Extraction
+# ============================================================
+
+def extract_raw_facts(
+    raw_text: str,
+) -> list[dict]:
+    """
+    Markdown
+        ↓
+    LangExtract
+        ↓
+    Grounded Raw Facts
+
+    关键：
+
+    显式指定：
+
+        provider="openai"
+
+    因为 qwen-plus 是 OpenAI-compatible 模型，
+    但不是 GPT model id。
+
+    如果不指定 provider，
+    LangExtract 可能自动选择 Ollama。
+    """
 
     examples = [
         lx.data.ExampleData(
             text=(
-                "江阴东华铝材科技有限公司"
-                "尚欠贷款本金11521035.88元。"
+                "江阴某有限公司于2018年12月19日"
+                "召开股东会。"
             ),
             extractions=[
                 lx.data.Extraction(
-                    extraction_class="fact",
+                    extraction_class=
+                        "fact",
+
                     extraction_text=(
-                        "江阴东华铝材科技有限公司"
-                        "尚欠贷款本金11521035.88元。"
+                        "江阴某有限公司于2018年12月19日"
+                        "召开股东会"
                     ),
+
                     attributes={
-                        "subject_name":
-                            "江阴东华铝材科技有限公司",
+                        "subject":
+                            "江阴某有限公司",
+
                         "predicate":
-                            "贷款本金",
+                            "召开股东会时间",
+
                         "value":
-                            "11521035.88",
+                            "2018年12月19日",
+
                         "unit":
-                            "元",
+                            "",
                     },
                 )
             ],
         )
     ]
 
-    config = ModelConfig(
+    # ========================================================
+    # 关键修复
+    #
+    # qwen-plus
+    #    ↓
+    # 显式指定 OpenAILanguageModel
+    #    ↓
+    # OPENAI_API_BASE_URL
+    #    ↓
+    # OpenAI-compatible Qwen API
+    # ========================================================
+
+    model_config = ModelConfig(
         model_id=os.getenv(
             "FACT_EXTRACT_MODEL",
             "qwen-plus",
         ),
+
         provider="openai",
+
         provider_kwargs={
             "api_key":
                 os.getenv(
                     "OPENAI_API_KEY"
                 ),
+
             "base_url":
                 os.getenv(
                     "OPENAI_API_BASE_URL"
                 ),
+
+            "temperature":
+                0,
         },
     )
 
-    return lx.extract(
-        text_or_documents=raw_text,
-        prompt_description=prompt,
-        examples=examples,
-        config=config,
+    result = lx.extract(
+        text_or_documents=
+            raw_text,
+
+        prompt_description=
+            FACT_EXTRACTION_PROMPT,
+
+        examples=
+            examples,
+
+        config=
+            model_config,
     )
 
-
-# ============================================================
-# 5. 主体解析
-# ============================================================
-
-def resolve_fact_subject(
-    original_subject: str,
-    evidence: str,
-    start_line: int,
-    entity_map: dict,
-    entity_blocks: list[EntityBlock],
-) -> tuple[str, bool, str]:
-    """
-    最终主体解析规则。
-
-    优先级：
-
-    1. 明确 subject 确实存在于 evidence
-       -> DIRECT
-
-    2. evidence 中有“本公司”
-       -> Entity Resolution
-
-    3. 上面都不成立
-       -> Block Ownership
-
-    4. 全失败
-       -> UNKNOWN
-    """
-
-    # ========================================================
-    # 1. LangExtract 给出了明确 subject
-    # ========================================================
-
-    if (
-        original_subject
-        not in (
-            "本公司",
-            "UNKNOWN",
-            "",
-            None,
-        )
-    ):
-        # ----------------------------------------------------
-        # 只有主体真的出现在证据里，
-        # 才允许 DIRECT。
-        #
-        # 例如：
-        #
-        # Evidence:
-        # 澄土国用（2008）第3884号项下...
-        #
-        # Subject:
-        # 澄土国用（2008）第3884号
-        #
-        # => DIRECT
-        # ----------------------------------------------------
-
-        if original_subject in evidence:
-
-            return (
-                original_subject,
-                True,
-                "DIRECT",
-            )
-
-        # ----------------------------------------------------
-        # 模型给了明确主体，
-        # 但证据根本没有这个主体。
-        #
-        # 不相信模型。
-        #
-        # 改用 Block Ownership。
-        # ----------------------------------------------------
-
-        block_owner = find_block_owner(
-            start_line,
-            entity_blocks,
-        )
-
-        if block_owner != "UNKNOWN":
-
-            return (
-                block_owner,
-                True,
-                "BLOCK_OWNERSHIP",
-            )
-
-        return (
-            "UNKNOWN",
-            False,
-            "NONE",
-        )
-
-    # ========================================================
-    # 2. subject = 本公司
-    # ========================================================
-
-    if original_subject == "本公司":
-
-        # ----------------------------------------------------
-        # Evidence 确实包含“本公司”
-        #
-        # 优先精确 Entity Resolution
-        # ----------------------------------------------------
-
-        if "本公司" in evidence:
-
-            resolved_entity = entity_map.get(
-                start_line
-            )
-
-            if resolved_entity:
-
-                return (
-                    resolved_entity,
-                    True,
-                    "ENTITY_RESOLUTION",
-                )
-
-        # ----------------------------------------------------
-        # 精确 Entity Resolution 没匹配到，
-        # 或 evidence 本身没有“本公司”
-        #
-        # 回退到 Block Ownership
-        # ----------------------------------------------------
-
-        block_owner = find_block_owner(
-            start_line,
-            entity_blocks,
-        )
-
-        if block_owner != "UNKNOWN":
-
-            return (
-                block_owner,
-                True,
-                "BLOCK_OWNERSHIP",
-            )
-
-        return (
-            "UNKNOWN",
-            False,
-            "NONE",
-        )
-
-    # ========================================================
-    # 3. subject = UNKNOWN / 空
-    # ========================================================
-
-    block_owner = find_block_owner(
-        start_line,
-        entity_blocks,
-    )
-
-    if block_owner != "UNKNOWN":
-
-        return (
-            block_owner,
-            True,
-            "BLOCK_OWNERSHIP",
-        )
-
-    return (
-        "UNKNOWN",
-        False,
-        "NONE",
-    )
-
-
-# ============================================================
-# 6. Merge
-# ============================================================
-
-def build_final_facts(
-    raw_text: str,
-    extraction_result,
-    entity_map: dict,
-    entity_blocks: list[EntityBlock],
-) -> list:
-    """
-    LangExtract
-        +
-    Entity Resolution
-        +
-    Block Ownership
-        ↓
-    Final Facts
-    """
-
-    final_facts = []
+    facts = []
 
     for extraction in (
-        extraction_result.extractions
+        result.extractions
     ):
 
         attributes = (
@@ -682,374 +786,486 @@ def build_final_facts(
             or {}
         )
 
-        original_subject = (
-            attributes.get(
-                "subject_name",
-                "UNKNOWN",
-            )
-        )
-
-        predicate = attributes.get(
-            "predicate",
-            "",
-        )
-
-        value = attributes.get(
-            "value",
-            "",
-        )
-
-        unit = attributes.get(
-            "unit",
-            "",
-        )
-
         evidence = (
             extraction.extraction_text
             or ""
         )
 
-        char_interval = (
+        interval = (
             extraction.char_interval
         )
 
-        # ====================================================
-        # Grounding 失败
-        # ====================================================
+        char_start = None
+        char_end = None
 
-        if char_interval is None:
+        if interval is not None:
 
-            final_facts.append(
-                {
-                    "subject_name":
-                        original_subject,
-
-                    "original_subject_name":
-                        original_subject,
-
-                    "predicate":
-                        predicate,
-
-                    "value":
-                        value,
-
-                    "unit":
-                        unit,
-
-                    "line_start":
-                        None,
-
-                    "line_end":
-                        None,
-
-                    "char_start":
-                        None,
-
-                    "char_end":
-                        None,
-
-                    "evidence":
-                        evidence,
-
-                    "grounded":
-                        False,
-
-                    "subject_resolved":
-                        False,
-
-                    "resolution_method":
-                        "NONE",
-                }
+            char_start = (
+                interval.start_pos
             )
 
-            continue
-
-        # ====================================================
-        # char interval -> line
-        # ====================================================
-
-        start_pos = (
-            char_interval.start_pos
-        )
-
-        end_pos = (
-            char_interval.end_pos
-        )
-
-        start_line = (
-            char_position_to_line(
-                raw_text,
-                start_pos,
+            char_end = (
+                interval.end_pos
             )
-        )
 
-        end_char_for_line = max(
-            start_pos,
-            end_pos - 1,
-        )
+        # ====================================================
+        # Grounding Validation
+        # ====================================================
 
-        end_line = (
-            char_position_to_line(
-                raw_text,
-                end_char_for_line,
+        grounded = False
+
+        if (
+            char_start is not None
+            and char_end is not None
+        ):
+
+            source_text = (
+                raw_text[
+                    char_start:
+                    char_end
+                ]
             )
-        )
+
+            grounded = (
+                source_text
+                == evidence
+            )
 
         # ====================================================
-        # 解析最终 Subject
+        # char -> line
         # ====================================================
 
-        (
-            final_subject,
-            subject_resolved,
-            resolution_method,
-        ) = resolve_fact_subject(
-            original_subject=
-                original_subject,
+        line_start = None
+        line_end = None
 
-            evidence=
-                evidence,
+        if char_start is not None:
 
-            start_line=
-                start_line,
+            line_start = (
+                char_position_to_line(
+                    text=
+                        raw_text,
 
-            entity_map=
-                entity_map,
+                    char_pos=
+                        char_start,
+                )
+            )
 
-            entity_blocks=
-                entity_blocks,
-        )
+        if (
+            char_end is not None
+            and char_end > 0
+        ):
 
-        # ====================================================
-        # Final Fact
-        # ====================================================
+            line_end = (
+                char_position_to_line(
+                    text=
+                        raw_text,
 
-        final_facts.append(
+                    char_pos=
+                        char_end - 1,
+                )
+            )
+
+        facts.append(
             {
-                "subject_name":
-                    final_subject,
-
                 "original_subject_name":
-                    original_subject,
+                    attributes.get(
+                        "subject",
+                        "",
+                    ),
 
                 "predicate":
-                    predicate,
+                    attributes.get(
+                        "predicate",
+                        "",
+                    ),
 
                 "value":
-                    value,
+                    attributes.get(
+                        "value",
+                        "",
+                    ),
 
                 "unit":
-                    unit,
+                    attributes.get(
+                        "unit",
+                        "",
+                    ),
 
                 "line_start":
-                    start_line,
+                    line_start,
 
                 "line_end":
-                    end_line,
+                    line_end,
 
                 "char_start":
-                    start_pos,
+                    char_start,
 
                 "char_end":
-                    end_pos,
+                    char_end,
 
                 "evidence":
                     evidence,
 
                 "grounded":
-                    True,
-
-                "subject_resolved":
-                    subject_resolved,
-
-                "resolution_method":
-                    resolution_method,
+                    grounded,
             }
         )
 
-    return final_facts
+    return facts
 
 
 # ============================================================
-# 7. 打印 Fact
+# 9. Conservative Subject Resolver
 # ============================================================
+def is_weak_evidence(
+    evidence: str,
+    predicate: str,
+    original_subject: str,
+) -> bool:
+    """
+    判断 Evidence 是否弱到不应该使用 Block Ownership。
 
-def print_fact(
-    index: int,
+    当前第一版只拦截最明显的危险情况：
+    - subject 为空
+    - predicate 为空
+    - evidence 只是一个孤立日期 / 数字
+    """
+
+    evidence = (evidence or "").strip()
+    predicate = (predicate or "").strip()
+    original_subject = (
+        original_subject or ""
+    ).strip()
+
+    # 本身连 predicate 都没有
+    if not predicate:
+        return True
+
+    # 有明确 subject 时，不属于这里
+    if original_subject:
+        return False
+
+    # 孤立日期
+    import re
+
+    date_pattern = (
+        r"^\d{4}年\d{1,2}月\d{1,2}日$"
+    )
+
+    if re.match(
+        date_pattern,
+        evidence,
+    ):
+        return True
+
+    # 孤立数字
+    number_pattern = (
+        r"^[\d,.]+$"
+    )
+
+    if re.match(
+        number_pattern,
+        evidence,
+    ):
+        return True
+
+    return False
+
+
+def resolve_subject_conservatively(
     fact: dict,
-):
+    mentions: list[dict],
+    blocks: list[dict],
+) -> dict:
     """
-    格式化输出单个 Fact。
+    保守主体解析。
+
+    新优先级：
+
+    1. 明确 subject 出现在 evidence
+       → DIRECT / MEDIUM
+
+    2. original_subject == 本公司
+       → ENTITY_RESOLUTION / HIGH
+
+    3. 没有明确主体时
+       → 判断 Evidence 是否允许 Block fallback
+
+    4. Evidence 太弱
+       → UNRESOLVED
+
+    5. 最后才允许 Block Ownership
+       → LOW
     """
 
-    print()
-    print("-" * 60)
-    print(
-        f"Fact #{index}"
+    evidence = (
+        fact.get(
+            "evidence",
+            ""
+        )
+        or ""
     )
 
-    subject_name = fact.get(
-        "subject_name",
+    original_subject = (
+        fact.get(
+            "original_subject_name",
+            ""
+        )
+        or ""
+    )
+
+    predicate = (
+        fact.get(
+            "predicate",
+            ""
+        )
+        or ""
+    )
+
+    line_start = (
+        fact.get(
+            "line_start"
+        )
+    )
+
+    invalid_subjects = {
+        "",
+        "本公司",
         "UNKNOWN",
-    )
+        "未知",
+        "None",
+    }
 
-    original_subject = fact.get(
-        "original_subject_name",
-        subject_name,
-    )
-
-    print(
-        "Subject：",
-        subject_name,
-    )
+    # ========================================================
+    # 1. 明确主体优先
+    # ========================================================
 
     if (
         original_subject
-        != subject_name
+        not in invalid_subjects
+        and original_subject
+        in evidence
     ):
-        print(
-            "原 Subject：",
+
+        return {
+            "subject_name":
+                original_subject,
+
+            "subject_status":
+                "RESOLVED",
+
+            "subject_confidence":
+                "MEDIUM",
+
+            "resolution_method":
+                "DIRECT",
+
+            "subject_reason":
+                (
+                    "The explicit candidate subject "
+                    "appears in evidence. Semantic "
+                    "role validation has not yet "
+                    "been performed."
+                ),
+        }
+
+    # ========================================================
+    # 2. 只有 original_subject 本身就是“本公司”
+    #    才执行 Entity Resolution
+    # ========================================================
+
+    if original_subject == "本公司":
+
+        if line_start is not None:
+
+            resolved_entity = (
+                resolve_reference_by_line(
+                    line_number=
+                        line_start,
+
+                    mentions=
+                        mentions,
+                )
+            )
+
+            if resolved_entity:
+
+                return {
+                    "subject_name":
+                        resolved_entity,
+
+                    "subject_status":
+                        "RESOLVED",
+
+                    "subject_confidence":
+                        "HIGH",
+
+                    "resolution_method":
+                        "ENTITY_RESOLUTION",
+
+                    "subject_reason":
+                        (
+                            "The candidate subject is "
+                            "'本公司' and Entity Resolution "
+                            "resolved the reference."
+                        ),
+                }
+
+        return {
+            "subject_name":
+                None,
+
+            "subject_status":
+                "UNRESOLVED",
+
+            "subject_confidence":
+                "LOW",
+
+            "resolution_method":
+                "NONE",
+
+            "subject_reason":
+                (
+                    "The candidate subject is "
+                    "'本公司', but the reference "
+                    "could not be resolved safely."
+                ),
+        }
+
+    # ========================================================
+    # 3. Evidence 太弱时，禁止 Block Ownership
+    # ========================================================
+
+    if is_weak_evidence(
+        evidence=
+            evidence,
+
+        predicate=
+            predicate,
+
+        original_subject=
             original_subject,
-        )
-
-    print(
-        "Predicate：",
-        fact.get(
-            "predicate",
-            "",
-        ),
-    )
-
-    print(
-        "Value：",
-        fact.get(
-            "value",
-            "",
-        ),
-    )
-
-    print(
-        "Unit：",
-        fact.get(
-            "unit",
-            "",
-        ),
-    )
-
-    line_start = fact.get(
-        "line_start"
-    )
-
-    line_end = fact.get(
-        "line_end"
-    )
-
-    if line_start is None:
-
-        print(
-            "行号：None"
-        )
-
-    elif (
-        line_end is None
-        or line_start == line_end
     ):
 
-        print(
-            f"行号："
-            f"L{line_start:04d}"
+        return {
+            "subject_name":
+                None,
+
+            "subject_status":
+                "UNRESOLVED",
+
+            "subject_confidence":
+                "LOW",
+
+            "resolution_method":
+                "NONE",
+
+            "subject_reason":
+                (
+                    "Evidence is too weak to support "
+                    "subject inference. Block ownership "
+                    "fallback was intentionally rejected."
+                ),
+        }
+
+    # ========================================================
+    # 4. Block Ownership
+    # ========================================================
+
+    if line_start is not None:
+
+        block_owner = (
+            find_block_owner(
+                line_number=
+                    line_start,
+
+                blocks=
+                    blocks,
+            )
         )
 
-    else:
+        if block_owner:
 
-        print(
-            f"行号："
-            f"L{line_start:04d}"
-            f"~"
-            f"L{line_end:04d}"
-        )
+            return {
+                "subject_name":
+                    block_owner,
 
-    print(
-        "Evidence：",
-        fact.get(
-            "evidence",
-            "",
-        ),
-    )
+                "subject_status":
+                    "RESOLVED",
 
-    print(
-        "Grounding：",
-        (
-            "成功"
-            if fact.get(
-                "grounded"
-            )
-            else "失败"
-        ),
-    )
+                "subject_confidence":
+                    "LOW",
 
-    print(
-        "主体解析：",
-        (
-            "成功"
-            if fact.get(
-                "subject_resolved"
-            )
-            else "失败"
-        ),
-    )
+                "resolution_method":
+                    "BLOCK_OWNERSHIP",
 
-    print(
-        "解析方式：",
-        fact.get(
-            "resolution_method",
+                "subject_reason":
+                    (
+                        "No explicit validated subject "
+                        "was found. Subject was inferred "
+                        "from document block ownership."
+                    ),
+            }
+
+    # ========================================================
+    # 5. 最终无法判断
+    # ========================================================
+
+    return {
+        "subject_name":
+            None,
+
+        "subject_status":
+            "UNRESOLVED",
+
+        "subject_confidence":
+            "LOW",
+
+        "resolution_method":
             "NONE",
-        ),
-    )
 
+        "subject_reason":
+            (
+                "Insufficient evidence to determine "
+                "the subject safely."
+            ),
+    }
 
 # ============================================================
-# 8. main
+# 10. main
 # ============================================================
 
 def main():
 
-    # ========================================================
-    # 找 Markdown
-    # ========================================================
-
-    files = list(
-        INPUT_DIR.glob("*.md")
-    )
-
-    files.sort()
-
-    if not files:
-
-        print(
-            f"没有找到原始 Markdown："
-            f"{INPUT_DIR}"
-        )
-
-        return
-
-    # 实验阶段仍然只跑第一份
-    file_path = files[0]
-
     print("=" * 60)
 
     print(
-        f"实验文件："
-        f"{file_path.name}"
+        "Fact Pipeline Experiment"
     )
 
     # ========================================================
-    # 读取原文
+    # Stage 0
+    #
+    # 读取 Markdown
     # ========================================================
 
+    source_path = (
+        find_markdown_file()
+    )
+
+    source_file = (
+        source_path.name
+    )
+
     raw_text = (
-        file_path.read_text(
+        source_path.read_text(
             encoding="utf-8"
+        )
+    )
+
+    numbered_text = (
+        add_line_numbers(
+            raw_text
         )
     )
 
@@ -1057,20 +1273,20 @@ def main():
         raw_text.splitlines()
     )
 
-    print()
-
     print(
-        f"原始字符数："
-        f"{len(raw_text)}"
+        f"Source："
+        f"{source_file}"
     )
 
     print(
-        f"原始行数："
+        f"Lines："
         f"{total_lines}"
     )
 
     # ========================================================
-    # Stage 1：Entity Resolution
+    # Stage 1
+    #
+    # Entity Resolution
     # ========================================================
 
     print()
@@ -1082,111 +1298,157 @@ def main():
 
     entity_result = (
         resolve_entities(
-            raw_text
+            numbered_text
         )
     )
 
-    entity_map = (
-        build_entity_map(
-            entity_result
-        )
+    mentions = (
+        entity_result[
+            "mentions"
+        ]
     )
 
-    print()
+    definitions = (
+        entity_result[
+            "definitions"
+        ]
+    )
+
     print(
-        "Entity Map："
+        f"Mentions："
+        f"{len(mentions)}"
     )
 
-    for line, entity in sorted(
-        entity_map.items()
-    ):
+    print(
+        f"Entity Definitions："
+        f"{len(definitions)}"
+    )
+
+    for definition in definitions:
 
         print(
-            f"L{line:04d}"
-            f" -> "
-            f"{entity}"
+            f"L"
+            f"{definition['definition_line']:04d}"
+            " → "
+            f"{definition['entity']}"
         )
 
     # ========================================================
-    # Stage 1.5：Block Ownership
+    # Stage 1.5
+    #
+    # Block Ownership
     # ========================================================
 
-    entity_blocks = (
+    print()
+    print("=" * 60)
+
+    print(
+        "Stage 1.5："
+        "Block Ownership"
+    )
+
+    blocks = (
         build_entity_blocks(
-            entity_result=
-                entity_result,
+            definitions=
+                definitions,
 
             total_lines=
                 total_lines,
         )
     )
 
-    print()
-    print(
-        "Entity Blocks："
-    )
-
-    for block in entity_blocks:
+    for block in blocks:
 
         print(
-            f"L{block.start_line:04d}"
-            f" ~ "
-            f"L{block.end_line:04d}"
-            f" -> "
-            f"{block.entity}"
+            f"L"
+            f"{block['start_line']:04d}"
+            " ~ "
+            f"L"
+            f"{block['end_line']:04d}"
+            " → "
+            f"{block['owner']}"
         )
 
     # ========================================================
-    # Stage 2：LangExtract
+    # Stage 2
+    #
+    # Grounded Raw Fact Extraction
     # ========================================================
 
     print()
     print("=" * 60)
 
     print(
-        "Stage 2：LangExtract"
+        "Stage 2："
+        "Grounded Fact Extraction"
     )
 
-    extraction_result = (
-        extract_facts(
+    raw_facts = (
+        extract_raw_facts(
             raw_text
         )
     )
 
     print(
-        f"LangExtract Facts："
-        f"{len(extraction_result.extractions)}"
+        f"Raw Facts："
+        f"{len(raw_facts)}"
     )
 
     # ========================================================
-    # Stage 3：Merge
+    # Stage 3
+    #
+    # Conservative Subject Resolution
     # ========================================================
 
     print()
     print("=" * 60)
 
     print(
-        "Stage 3：Merge"
+        "Stage 3："
+        "Conservative Subject Resolution"
     )
 
-    final_facts = (
-        build_final_facts(
-            raw_text=
-                raw_text,
+    final_facts = []
 
-            extraction_result=
-                extraction_result,
+    for fact in raw_facts:
 
-            entity_map=
-                entity_map,
+        subject_result = (
+            resolve_subject_conservatively(
+                fact=
+                    fact,
 
-            entity_blocks=
-                entity_blocks,
+                mentions=
+                    mentions,
+
+                blocks=
+                    blocks,
+            )
         )
-    )
+
+        final_fact = {
+            **fact,
+            **subject_result,
+        }
+
+        # ====================================================
+        # 为了暂时兼容之前实验
+        # ====================================================
+
+        final_fact[
+            "subject_resolved"
+        ] = (
+            final_fact[
+                "subject_status"
+            ]
+            == "RESOLVED"
+        )
+
+        final_facts.append(
+            final_fact
+        )
 
     # ========================================================
-    # 打印 Facts
+    # 输出 Fact
     # ========================================================
 
     for index, fact in enumerate(
@@ -1194,22 +1456,114 @@ def main():
         start=1,
     ):
 
-        print_fact(
-            index=index,
-            fact=fact,
+        print()
+        print("-" * 60)
+
+        print(
+            f"Fact #{index}"
+        )
+
+        line_start = (
+            fact.get(
+                "line_start"
+            )
+        )
+
+        if (
+            line_start
+            is not None
+        ):
+
+            print(
+                f"Line："
+                f"L{line_start:04d}"
+            )
+
+        print(
+            "Original Subject：",
+            fact.get(
+                "original_subject_name"
+            ),
+        )
+
+        print(
+            "Resolved Subject：",
+            fact.get(
+                "subject_name"
+            ),
+        )
+
+        print(
+            "Predicate：",
+            fact.get(
+                "predicate"
+            ),
+        )
+
+        print(
+            "Value：",
+            fact.get(
+                "value"
+            ),
+        )
+
+        print(
+            "Unit：",
+            fact.get(
+                "unit"
+            ),
+        )
+
+        print(
+            "Evidence：",
+            fact.get(
+                "evidence"
+            ),
+        )
+
+        print(
+            "Grounded：",
+            fact.get(
+                "grounded"
+            ),
+        )
+
+        print(
+            "Subject Status：",
+            fact.get(
+                "subject_status"
+            ),
+        )
+
+        print(
+            "Confidence：",
+            fact.get(
+                "subject_confidence"
+            ),
+        )
+
+        print(
+            "Method：",
+            fact.get(
+                "resolution_method"
+            ),
+        )
+
+        print(
+            "Reason：",
+            fact.get(
+                "subject_reason"
+            ),
         )
 
     # ========================================================
     # 统计
     # ========================================================
 
-    total_facts = len(
-        final_facts
-    )
-
     grounded_count = sum(
         1
-        for fact in final_facts
+        for fact
+        in final_facts
         if fact.get(
             "grounded"
         )
@@ -1217,94 +1571,266 @@ def main():
 
     resolved_count = sum(
         1
-        for fact in final_facts
-        if fact.get(
-            "subject_resolved"
-        )
-    )
-
-    direct_count = sum(
-        1
-        for fact in final_facts
+        for fact
+        in final_facts
         if (
             fact.get(
-                "resolution_method"
+                "subject_status"
             )
-            == "DIRECT"
+            == "RESOLVED"
         )
     )
 
-    entity_resolution_count = sum(
+    unresolved_count = sum(
         1
-        for fact in final_facts
+        for fact
+        in final_facts
         if (
             fact.get(
-                "resolution_method"
+                "subject_status"
             )
-            == "ENTITY_RESOLUTION"
+            == "UNRESOLVED"
         )
     )
 
-    block_ownership_count = sum(
-        1
-        for fact in final_facts
+    confidence_counter = Counter(
+        fact.get(
+            "subject_confidence",
+            "UNKNOWN",
+        )
+        for fact
+        in final_facts
         if (
             fact.get(
-                "resolution_method"
+                "subject_status"
             )
-            == "BLOCK_OWNERSHIP"
+            == "RESOLVED"
         )
     )
 
-    unresolved_count = (
-        total_facts
-        - resolved_count
+    method_counter = Counter(
+        fact.get(
+            "resolution_method",
+            "NONE",
+        )
+        for fact
+        in final_facts
     )
+
+    # ========================================================
+    # 打印统计
+    # ========================================================
 
     print()
     print("=" * 60)
 
     print(
-        "Pipeline 统计"
+        "Pipeline Statistics"
     )
 
     print(
-        f"最终 Fact："
-        f"{total_facts}"
+        f"Raw Facts："
+        f"{len(final_facts)}"
     )
 
     print(
-        f"Grounding 成功："
+        f"Grounding："
         f"{grounded_count}"
+        "/"
+        f"{len(final_facts)}"
+    )
+
+    print()
+
+    print(
+        "Subject Resolution："
     )
 
     print(
-        f"主体解析成功："
+        f"RESOLVED："
         f"{resolved_count}"
     )
 
     print(
-        f"主体解析失败："
+        f"UNRESOLVED："
         f"{unresolved_count}"
     )
 
+    print()
+
     print(
-        f"直接实体："
-        f"{direct_count}"
+        "Confidence："
     )
 
     print(
-        f"Entity Resolution："
-        f"{entity_resolution_count}"
+        "HIGH：",
+        confidence_counter.get(
+            "HIGH",
+            0,
+        ),
     )
 
     print(
-        f"Block Ownership："
-        f"{block_ownership_count}"
+        "MEDIUM：",
+        confidence_counter.get(
+            "MEDIUM",
+            0,
+        ),
+    )
+
+    print(
+        "LOW：",
+        confidence_counter.get(
+            "LOW",
+            0,
+        ),
+    )
+
+    print()
+
+    print(
+        "Resolution Method："
+    )
+
+    print(
+        "ENTITY_RESOLUTION：",
+        method_counter.get(
+            "ENTITY_RESOLUTION",
+            0,
+        ),
+    )
+
+    print(
+        "DIRECT：",
+        method_counter.get(
+            "DIRECT",
+            0,
+        ),
+    )
+
+    print(
+        "BLOCK_OWNERSHIP：",
+        method_counter.get(
+            "BLOCK_OWNERSHIP",
+            0,
+        ),
+    )
+
+    print(
+        "NONE：",
+        method_counter.get(
+            "NONE",
+            0,
+        ),
     )
 
     # ========================================================
-    # 保存实验结果
+    # LOW Confidence Facts
+    # ========================================================
+
+    low_confidence_facts = [
+        fact
+        for fact
+        in final_facts
+        if (
+            fact.get(
+                "subject_confidence"
+            )
+            == "LOW"
+            and fact.get(
+                "subject_status"
+            )
+            == "RESOLVED"
+        )
+    ]
+
+    unresolved_facts = [
+        fact
+        for fact
+        in final_facts
+        if (
+            fact.get(
+                "subject_status"
+            )
+            == "UNRESOLVED"
+        )
+    ]
+
+    print()
+    print("=" * 60)
+
+    print(
+        "LOW Confidence Facts"
+    )
+
+    if not low_confidence_facts:
+
+        print(
+            "无"
+        )
+
+    else:
+
+        for fact in (
+            low_confidence_facts
+        ):
+
+            print(
+                f"L"
+                f"{fact.get('line_start', 0):04d}"
+                " | "
+                f"{fact.get('subject_name')}"
+                " | "
+                f"{fact.get('predicate')}"
+                " | "
+                f"{fact.get('value')}"
+            )
+
+    print()
+    print("=" * 60)
+
+    print(
+        "UNRESOLVED Facts"
+    )
+
+    if not unresolved_facts:
+
+        print(
+            "无"
+        )
+
+    else:
+
+        for fact in (
+            unresolved_facts
+        ):
+
+            line_start = (
+                fact.get(
+                    "line_start"
+                )
+            )
+
+            if line_start is None:
+                line_text = "UNKNOWN"
+            else:
+                line_text = (
+                    f"L"
+                    f"{line_start:04d}"
+                )
+
+            print(
+                f"{line_text}"
+                " | "
+                f"{fact.get('predicate')}"
+                " | "
+                f"{fact.get('value')}"
+                " | "
+                f"{fact.get('evidence')}"
+            )
+
+    # ========================================================
+    # 保存结果
     # ========================================================
 
     OUTPUT_DIR.mkdir(
@@ -1317,71 +1843,90 @@ def main():
         / "pipeline_result.json"
     )
 
-    output_data = {
+    output = {
         "file":
-            file_path.name,
-
-        "model":
-            os.getenv(
-                "FACT_EXTRACT_MODEL",
-                "qwen-plus",
-            ),
+            source_file,
 
         "entity_resolution": {
             "mentions":
-                entity_result.get(
-                    "mentions",
-                    [],
-                ),
+                mentions,
 
-            "entity_map":
-                entity_map,
+            "definitions":
+                definitions,
         },
 
-        "entity_blocks": [
-            {
-                "start_line":
-                    block.start_line,
-
-                "end_line":
-                    block.end_line,
-
-                "entity":
-                    block.entity,
-            }
-            for block in entity_blocks
-        ],
+        "blocks":
+            blocks,
 
         "facts":
             final_facts,
 
         "summary": {
-            "total_facts":
-                total_facts,
+            "raw_facts":
+                len(
+                    final_facts
+                ),
 
             "grounded":
                 grounded_count,
 
-            "resolved_subjects":
+            "resolved":
                 resolved_count,
 
-            "unresolved_subjects":
+            "unresolved":
                 unresolved_count,
 
-            "direct":
-                direct_count,
+            "confidence": {
+                "HIGH":
+                    confidence_counter.get(
+                        "HIGH",
+                        0,
+                    ),
 
-            "entity_resolution":
-                entity_resolution_count,
+                "MEDIUM":
+                    confidence_counter.get(
+                        "MEDIUM",
+                        0,
+                    ),
 
-            "block_ownership":
-                block_ownership_count,
+                "LOW":
+                    confidence_counter.get(
+                        "LOW",
+                        0,
+                    ),
+            },
+
+            "resolution_method": {
+                "ENTITY_RESOLUTION":
+                    method_counter.get(
+                        "ENTITY_RESOLUTION",
+                        0,
+                    ),
+
+                "DIRECT":
+                    method_counter.get(
+                        "DIRECT",
+                        0,
+                    ),
+
+                "BLOCK_OWNERSHIP":
+                    method_counter.get(
+                        "BLOCK_OWNERSHIP",
+                        0,
+                    ),
+
+                "NONE":
+                    method_counter.get(
+                        "NONE",
+                        0,
+                    ),
+            },
         },
     }
 
     output_file.write_text(
         json.dumps(
-            output_data,
+            output,
             ensure_ascii=False,
             indent=2,
         ),
@@ -1389,6 +1934,9 @@ def main():
     )
 
     print()
+    print(
+        "=" * 60
+    )
 
     print(
         f"结果已保存："
